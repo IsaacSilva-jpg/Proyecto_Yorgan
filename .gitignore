@@ -1,0 +1,8 @@
+# Ignorar absolutamente todo
+*
+
+# Excepto el propio gitignore
+!.gitignore
+
+# Excepto tus apuntes (cambia "apuntes.md" por tu archivo real)
+!apuntes.md
