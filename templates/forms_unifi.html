@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>
+    Yorgan · 
+    {% if plantilla == 'correo_buscar_usuario' %}Recuperar contraseña
+    {% elif plantilla == 'reenviar_token' %}Reenviar enlace
+    {% elif plantilla == 'nueva_cwontra' %}Nueva contraseña
+    {% endif %}
+  </title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0d0f14;
+      --surface: #161a23;
+      --card:    #1c2130;
+      --border:  #2a3045;
+      --accent:  #e8c46a;
+      --accent2: #5e8cf4;
+      --text:    #e8eaf0;
+      --muted:   #7a85a0;
+      --danger:  #f87171;
+      --success: #4ade80;
+      --radius:  16px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 20px;
+      overflow-x: hidden;
+    }
+
+    /* Ambient glows */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -200px; left: 50%;
+      transform: translateX(-50%);
+      width: 800px; height: 600px;
+      background: radial-gradient(ellipse, rgba(94,140,244,0.09) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -200px; right: -100px;
+      width: 600px; height: 500px;
+      background: radial-gradient(ellipse, rgba(232,196,106,0.05) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ── Floating card ── */
+    .login-card {
+      position: relative; z-index: 1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 44px 40px 36px;
+      width: 100%; max-width: 420px;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.03),
+        0 24px 64px rgba(0,0,0,0.45),
+        0 4px 16px rgba(0,0,0,0.3);
+      animation: cardIn 0.65s cubic-bezier(0.22,1,0.36,1) both;
+    }
+
+    @keyframes cardIn {
+      from { opacity:0; transform: translateY(28px) scale(0.98); }
+      to   { opacity:1; transform: translateY(0) scale(1); }
+    }
+
+    /* ── Brand ── */
+    .brand { text-align: center; margin-bottom: 28px; }
+    .brand-logo {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 46px; height: 46px;
+      background: rgba(232,196,106,0.12);
+      border: 1px solid rgba(232,196,106,0.25);
+      border-radius: 14px; margin-bottom: 14px;
+    }
+    .brand-logo svg { width: 22px; height: 22px; stroke: var(--accent); }
+    .brand-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem; font-weight: 700;
+      letter-spacing: -0.02em; color: var(--text); line-height: 1;
+    }
+    .brand-name span { color: var(--accent); }
+    .brand-greeting {
+      margin-top: 10px; font-size: 14px; color: var(--muted); line-height: 1.55;
+    }
+
+    /* ── Flash alerts ── */
+    .alerts { margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px; }
+    .alert {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 11px 14px; border-radius: 10px;
+      font-size: 13px; line-height: 1.5;
+      background: rgba(248,113,113,0.09);
+      border: 1px solid rgba(248,113,113,0.28);
+      color: var(--danger);
+      animation: fadeUp 0.4s ease both;
+    }
+    
+    .alert svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; stroke: var(--danger); }
+
+    /* ── Form fields ── */
+    .fields { display: flex; flex-direction: column; gap: 16px; }
+    .field-group { display: flex; flex-direction: column; gap: 7px; }
+    .field-label {
+      font-size: 12px; font-weight: 500;
+      color: var(--muted); letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .field-wrap { position: relative; }
+    .field-icon {
+      position: absolute; left: 14px; top: 50%;
+      transform: translateY(-50%); width: 16px; height: 16px;
+      stroke: var(--muted); pointer-events: none;
+    }
+    .field-wrap input {
+      width: 100%; padding: 12px 14px 12px 40px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 300;
+      outline: none; transition: border-color 0.25s, box-shadow 0.25s;
+    }
+    .field-wrap input::placeholder { color: var(--muted); }
+    .field-wrap input:focus {
+      border-color: var(--accent2);
+      box-shadow: 0 0 0 3px rgba(94,140,244,0.13);
+    }
+    .field-error { font-size: 12px; color: var(--danger); margin-top: 2px; }
+
+    /* Password toggle */
+    .toggle-pass {
+      position: absolute; right: 13px; top: 50%;
+      transform: translateY(-50%); background: none; border: none; cursor: pointer;
+      padding: 2px; display: flex;
+    }
+    .toggle-pass svg { width: 16px; height: 16px; stroke: var(--muted); transition: stroke 0.2s; }
+    .toggle-pass:hover svg { stroke: var(--text); }
+
+    /* ── Password Checklist ── */
+    .pwd-checklist {
+      display: flex; flex-direction: column; gap: 6px;
+      margin-top: 4px; padding: 12px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+    .pwd-req {
+      font-size: 12px; color: var(--muted);
+      display: flex; align-items: center; gap: 8px;
+      transition: color 0.3s ease;
+    }
+    .pwd-req svg { width: 14px; height: 14px; stroke: currentColor; transition: stroke 0.3s ease; }
+    .pwd-req.valid { color: var(--success); }
+
+    /* ── Submit button ── */
+    .btn-submit {
+      width: 100%; margin-top: 22px; padding: 13px;
+      background: var(--accent); color: #0d0f14;
+      border: none; border-radius: 11px;
+      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+      cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+
+        /* Cuando el botón tenga el atributo 'disabled', cambiaremos su aspecto */
+    .btn-submit:disabled {
+      background: #2a3045; /* Un tono más oscuro/grisáceo que combine con tu paleta */
+      color: var(--muted);  /* El color de texto apagado que ya usas en el proyecto */
+      cursor: not-allowed;  /* Cambia el cursor del mouse a un círculo rojo de "prohibido" */
+      box-shadow: none;     /* Le quita la sombra azul de botón activo */
+    }
+    
+    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(232,196,106,0.22); }
+    .btn-submit:active { transform: translateY(0); }
+
+    /* ── Back to login link ── */
+    .back-link {
+      margin-top: 28px; text-align: center; font-size: 13px; color: var(--muted);
+      padding-top: 22px; border-top: 1px solid var(--border); display: block;
+    }
+    .back-link a { color: var(--accent2); text-decoration: none; font-weight: 500; transition: color 0.2s; }
+    .back-link a:hover { color: var(--text); }
+
+    @keyframes fadeUp {
+      from { opacity:0; transform: translateY(8px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-card">
+
+  <div class="brand">
+
+    <div class="brand-name">Yor<span>gan</span></div>
+
+    {% if plantilla == 'correo_buscar_usuario' %}
+      <p class="brand-greeting">Recuperación de contraseña<br>Ingresa tu correo para buscar tu cuenta.</p>
+    {% elif plantilla == 'reenviar_token' %}
+      <p class="brand-greeting">Enlace caducado o inválido<br>Ingresa tu correo para enviarte un nuevo token.</p>
+    {% elif plantilla == 'nueva_contra' %}
+      <p class="brand-greeting">Crea tu nueva contraseña<br>Asegúrate de cumplir con los requisitos de seguridad.</p>
+    {% endif %}
+  </div>
+
+  <form method="post" novalidate id="formulario_reenviar">
+    {{ form.hidden_tag() }}
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="alerts">
+            {% for category, message in messages %}
+              <div class="alert">
+                <svg fill="none" viewBox="0 0 24 24" stroke-width="2">  
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+                </svg>
+                {{ message }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      
+
+    <div class="fields">
+      
+      {% if plantilla == 'correo_buscar_usuario' or plantilla == 'reenviar_token' %}
+        <div class="field-group">
+          <label class="field-label" for="correo">Correo electrónico</label>
+          <div class="field-wrap">
+            <svg class="field-icon" fill="none" viewBox="0 0 24 24" stroke-width="1.6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/>
+            </svg>
+            {{ form.correo(id="correo", placeholder="tu@correo.com", autocomplete="email") }}
+          </div>
+          {% for error in form.correo.errors %}
+            <span class="field-error">{{ error }}</span>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if plantilla == 'nueva_contra' %}
+        <div class="field-group">
+          <label class="field-label" for="password">Nueva Contraseña</label>
+          <div class="field-wrap">
+            <svg class="field-icon" fill="none" viewBox="0 0 24 24" stroke-width="1.6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/>
+            </svg>
+            {{ form.password(id="password", placeholder="••••••••") }}
+            <button type="button" class="toggle-pass" onclick="togglePass('password', 'eyeIcon1')" aria-label="Mostrar contraseña">
+              <svg id="eyeIcon1" fill="none" viewBox="0 0 24 24" stroke-width="1.6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+            </button>
+          </div>
+          {% for error in form.password.errors %}
+            <span class="field-error">{{ error }}</span>
+          {% endfor %}
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="confirm_password">Confirmar Contraseña</label>
+          <div class="field-wrap">
+            <svg class="field-icon" fill="none" viewBox="0 0 24 24" stroke-width="1.6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            {{ form.confirm_password(id="confirm_password", placeholder="••••••••") }}
+            <button type="button" class="toggle-pass" onclick="togglePass('confirm_password', 'eyeIcon2')" aria-label="Mostrar contraseña">
+              <svg id="eyeIcon2" fill="none" viewBox="0 0 24 24" stroke-width="1.6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+            </button>
+          </div>
+          {% for error in form.confirm_password.errors %}
+            <span class="field-error">{{ error }}</span>
+          {% endfor %}
+        </div>
+
+        <div class="pwd-checklist" id="checklist">
+          <div class="pwd-req" id="req-length">
+            <svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+            Al menos 8 caracteres
+          </div>
+          <div class="pwd-req" id="req-upper">
+            <svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+            Al menos una mayúscula
+          </div>
+          <div class="pwd-req" id="req-number">
+            <svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+            Al menos un número
+          </div>
+          <div class="pwd-req" id="req-special">
+            <svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+            Al menos un carácter especial (@, $, !, %, *, ?, &)
+          </div>
+        </div>
+      {% endif %}
+
+    </div><button type="submit" class="btn-submit" id="boton_reenviar">
+      {% if plantilla == 'correo_buscar_usuario' %}
+        Enviar enlace de recuperación
+      {% elif plantilla == 'reenviar_token' %}
+        Reenviar enlace
+      {% elif plantilla == 'nueva_contra' %}
+        Guardar nueva contraseña
+      {% endif %}
+    </button>
+  </form>
+
+  <div class="back-link">
+    <a href="/inicio_sesion">← Regresar al inicio de sesión</a>
+  </div>
+
+</div><script>
+  // Función para alternar visibilidad de contraseñas de forma genérica
+  function togglePass(inputId, iconId) {
+    const input = document.getElementById(inputId);
+    const icon  = document.getElementById(iconId);
+    if (!input || !icon) return;
+
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/>`;
+    } else {
+      input.type = 'password';
+      icon.innerHTML = `
+        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>`;
+    }
+  }
+
+  // Lógica del Checklist en tiempo real para Flask-WTF validaciones
+  {% if plantilla == 'nueva_contra' %}
+    const passwordInput = document.getElementById('password');
+    const reqLength = document.getElementById('req-length');
+    const reqUpper = document.getElementById('req-upper');
+    const reqNumber = document.getElementById('req-number');
+    const reqSpecial = document.getElementById('req-special');
+
+    passwordInput.addEventListener('input', function() {
+      const val = passwordInput.value;
+      
+      // Longitud (mínimo 8)
+      if(val.length >= 8) reqLength.classList.add('valid');
+      else reqLength.classList.remove('valid');
+
+      // Mayúscula
+      if(/[A-Z]/.test(val)) reqUpper.classList.add('valid');
+      else reqUpper.classList.remove('valid');
+
+      // Número
+      if(/[0-9]/.test(val)) reqNumber.classList.add('valid');
+      else reqNumber.classList.remove('valid');
+
+      // Carácter especial
+      if(/[@$!%*?&]/.test(val)) reqSpecial.classList.add('valid');
+      else reqSpecial.classList.remove('valid');
+    });
+  {% endif %}
+
+  const formulario_ree = document.getElementById("formulario_reenviar")
+  const boton_reenviador = document.getElementById("boton_reenviar")
+
+  formulario_ree.addEventListener("submit", function(evento){
+
+    setTimeout(function(){
+      boton_reenviador.disabled= true
+    }, 50);
+  });
+
+
+</script>
+
+</body>
+</html>

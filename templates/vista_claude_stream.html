@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analizador de CV</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0f14;
+      --surface: #161a23;
+      --card: #1c2130;
+      --border: #2a3045;
+      --accent: #e8c46a;
+      --accent2: #5e8cf4;
+      --text: #e8eaf0;
+      --muted: #7a85a0;
+      --success: #4ade80;
+      --radius: 16px;
+    }
+
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      /* padding-top aumentado de 48px a 96px para dar espacio al navbar fijo */
+      padding: 96px 20px 80px;
+      overflow-x: hidden;
+    }
+
+    /* Background ambient glow */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -200px; left: 50%;
+      transform: translateX(-50%);
+      width: 800px; height: 600px;
+      background: radial-gradient(ellipse, rgba(94,140,244,0.08) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -200px; right: -100px;
+      width: 600px; height: 500px;
+      background: radial-gradient(ellipse, rgba(232,196,106,0.05) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrapper {
+      width: 100%; max-width: 780px;
+      position: relative; z-index: 1;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      margin-bottom: 52px;
+      animation: fadeDown 0.7s ease both;
+    }
+    .badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: rgba(94,140,244,0.12);
+      border: 1px solid rgba(94,140,244,0.25);
+      color: var(--accent2);
+      font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 5px 14px; border-radius: 999px;
+      margin-bottom: 20px;
+      font-weight: 500;
+    }
+    .badge-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent2);
+      animation: pulse 2s infinite;
+    }
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+    h1 span { color: var(--accent); }
+    .subtitle {
+      margin-top: 14px;
+      font-size: 15px; color: var(--muted);
+      max-width: 420px; margin-inline: auto;
+      line-height: 1.6;
+    }
+
+    /* Step layout */
+    .steps {
+      display: flex; flex-direction: column; gap: 20px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px 36px;
+      position: relative;
+      transition: border-color 0.3s ease;
+      animation: fadeUp 0.6s ease both;
+    }
+    .card:nth-child(1) { animation-delay: 0.15s; }
+    .card:nth-child(2) { animation-delay: 0.3s; }
+    .card:hover { border-color: rgba(94,140,244,0.35); }
+
+    .card-header {
+      display: flex; align-items: center; gap: 14px;
+      margin-bottom: 24px;
+    }
+    .step-num {
+      width: 34px; height: 34px;
+      border-radius: 10px;
+      background: rgba(232,196,106,0.12);
+      border: 1px solid rgba(232,196,106,0.25);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Playfair Display', serif;
+      font-size: 15px; font-weight: 700;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+    .card-title { font-size: 17px; font-weight: 500; color: var(--text); }
+    .card-desc  { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+    /* File Upload */
+    .dropzone {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 40px 24px;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 12px;
+      cursor: pointer;
+      transition: border-color 0.3s, background 0.3s;
+      position: relative;
+    }
+    .dropzone:hover, .dropzone.dragging {
+      border-color: var(--accent2);
+      background: rgba(94,140,244,0.05);
+    }
+    .dropzone input[type="file"] {
+      position: absolute; inset: 0;
+      opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .drop-icon {
+      width: 48px; height: 48px;
+      background: rgba(94,140,244,0.1);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .drop-icon svg { width: 22px; height: 22px; stroke: var(--accent2); }
+    .drop-label { font-size: 14px; color: var(--text); font-weight: 500; }
+    .drop-hint  { font-size: 12px; color: var(--muted); }
+    .file-selected {
+      display: none;
+      align-items: center; gap: 10px;
+      background: rgba(74,222,128,0.08);
+      border: 1px solid rgba(74,222,128,0.2);
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-top: 12px;
+    }
+
+    .file-selected.show { display: flex; }
+    .file-selected svg { width: 16px; height: 16px; stroke: var(--success); flex-shrink:0; }
+    .file-name { font-size: 13px; color: var(--success); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .file-button {
+      margin-left: auto; 
+      cursor: pointer;
+
+      border: none;
+      outline: none;
+
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 4px;
+      background-color: #d44848;
+      color: #991b1b;
+      
+      font-size: 16px;
+      font-weight: bold;
+
+      transition: background-color 0.2s, color 0.2s;
+    }
+
+    
+
+    /* Textarea */
+    textarea {
+      width: 100%;
+      min-height: 160px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px; font-weight: 300;
+      line-height: 1.65;
+      padding: 16px 18px;
+      resize: vertical;
+      transition: border-color 0.3s, box-shadow 0.3s;
+      outline: none;
+    }
+    textarea::placeholder { color: var(--muted); }
+    textarea:focus {
+      border-color: var(--accent2);
+      box-shadow: 0 0 0 3px rgba(94,140,244,0.12);
+    }
+    .char-count {
+      margin-top: 8px;
+      font-size: 12px; color: var(--muted);
+      text-align: right;
+    }
+
+    /* Submit button */
+    .submit-wrap {
+      margin-top: 8px;
+      animation: fadeUp 0.6s 0.45s ease both;
+    }
+    button[type="submit"] {
+      width: 100%;
+      padding: 15px 28px;
+      background: var(--accent);
+      color: #0d0f14;
+      border: none; border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px; font-weight: 500;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      position: relative; overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    button[type="submit"]:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 40px rgba(232,196,106,0.25);
+    }
+    button[type="submit"]:active { transform: translateY(0); }
+    button[type="submit"]:disabled {
+      opacity: 0.5; cursor: not-allowed; transform: none;
+    }
+    button[type="submit"] svg { width: 18px; height: 18px; }
+
+    /* Loader overlay */
+    .loader-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(13,15,20,0.8);
+      backdrop-filter: blur(6px);
+      z-index: 100;
+      flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 20px;
+    }
+    .loader-overlay.show { display: flex; }
+    .spinner {
+      width: 48px; height: 48px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    .loader-text { font-size: 15px; color: var(--muted); }
+
+    /* Toast */
+    .toast {
+      display: none;
+      position: fixed; bottom: 28px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 22px;
+      font-size: 14px;
+      z-index: 200;
+      transition: transform 0.3s, opacity 0.3s;
+      opacity: 0;
+    }
+    .toast.show {
+      display: block;
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    .toast.error { border-color: rgba(239,68,68,0.4); color: #fc8181; }
+    .toast.info  { border-color: rgba(94,140,244,0.4); color: var(--accent2); }
+
+    /* Divider arrow */
+    .divider {
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted); font-size: 20px;
+      animation: fadeUp 0.5s 0.22s ease both;
+    }
+    .divider svg { width: 22px; height: 22px; stroke: var(--muted); }
+
+   .alerta-temporal {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #4CAF50; /* Verde éxito */
+            color: white;
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            font-family: Arial, sans-serif;
+            transition: opacity 0.5s ease;
+            z-index: 1000;
+        }
+        .oculto { opacity: 0; pointer-events: none; }
+
+    /* Animations */
+    @keyframes fadeDown {
+      from { opacity:0; transform: translateY(-18px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity:0; transform: translateY(18px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes pulse {
+      0%,100% { opacity:1; } 50% { opacity:0.4; }
+    }
+
+    @media (max-width: 520px) {
+      .card { padding: 24px 20px; }
+    }
+
+    /* --- Fondo tecnológico --- */
+    .fondo-tecnologico {
+      /* Apunta al archivo de imagen del fondo */
+      background-image: url('fondo_tec_pagina_mejorado.jpeg');
+      /* Cubre toda la pantalla sin deformarse */
+      background-size: cover;
+      /* Evita el efecto mosaico */
+      background-repeat: no-repeat;
+      /* Ancla la imagen al centro */
+      background-position: center center;
+      /* Mantiene las líneas digitales nítidas */
+      image-rendering: crisp-edges;
+    }
+
+    /* --- Navbar --- */
+    .navbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 56px;
+      background: rgba(13, 15, 20, 0.85);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 50;
+    }
+    .navbar-brand {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent);
+      text-decoration: none;
+      letter-spacing: -0.01em;
+    }
+    .navbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 400;
+      padding: 6px 14px;
+      border-radius: 8px;
+      transition: background 0.2s, color 0.2s;
+    }
+    .nav-link:hover {
+      background: rgba(94, 140, 244, 0.1);
+      color: var(--text);
+    }
+    .nav-link.danger:hover {
+      background: rgba(239, 68, 68, 0.1);
+      color: #fc8181;
+    }
+    .nav-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      object-fit: cover;
+      margin-left: 8px;
+    }
+  </style>
+</head>
+<body class="fondo-tecnologico">
+
+<!-- Barra de navegación principal -->
+<nav class="navbar">
+  <!-- Esquina superior izquierda: nombre del programa -->
+  <a href="/" class="navbar-brand">Yorgan</a>
+
+  <!-- Esquina superior derecha: links de navegación + foto de cuenta -->
+  <div class="navbar-right">
+    <a href="/" class="nav-link">Home</a>
+    <a href="/cerrar_sesion" class="nav-link danger">Cerrar sesión</a>
+    <!-- Foto de la cuenta de Google del usuario -->
+
+    {% if current_user.imagen_google %}
+      <img src="{{ current_user.imagen_google }}" class="nav-avatar" alt="Foto de perfil" />
+    {% else %}
+      <img src="/static/foto_pefil.jpg" class="nav-avatar" alt="Usuario por defecto" />
+    {% endif %}
+
+  </div>
+</nav>
+
+<div class="wrapper">
+
+  <header>
+    <div class="badge">
+      <span class="badge-dot"></span>
+      Herramienta de reclutamiento
+    </div>
+    <h1>Analiza tu <span>CV</span><br>con IA</h1>
+    <p class="subtitle">Sube el currículum y describe el puesto. Nuestro sistema hará el resto en segundos.</p>
+  </header>
+
+  <form id="analyzeForm" enctype="multipart/form-data" action="/analizador" method="POST">
+    <div class="steps">
+
+      <!-- Step 1: File upload -->
+      <div class="card">
+        <div class="card-header">
+          <div class="step-num">1</div>
+          <div>
+            <div class="card-title">Sube el currículum</div>
+            <div class="card-desc">PDF · Máximo 10 MB</div>
+          </div>
+        </div>
+
+        <div class="dropzone" id="dropzone">
+          <input type="file" name="cv_file" id="cvFile" accept=".pdf" required />
+          <div class="drop-icon">
+            <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+          </div>
+          <span class="drop-label">Arrastra aquí o haz clic para seleccionar</span>
+          <span class="drop-hint">Compatible con PDF (.pdf)</span>
+        </div>
+
+        <div class="file-selected" id="fileSelected">
+          <svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span class="file-name" id="fileName">archivo.pdf</span>
+          
+          <button type="button" id="clearFileBtn" class="file-button">&times;</button>
+        </div>
+      </div>
+
+      <!-- Arrow divider -->
+      <div class="divider">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3"/></svg>
+      </div>
+
+      <!-- Step 2: Job description -->
+      <div class="card">
+        <div class="card-header">
+          <div class="step-num">2</div>
+          <div>
+            <div class="card-title">Descripción del puesto</div>
+            <div class="card-desc">Pega o escribe la oferta laboral completa</div>
+          </div>
+        </div>
+
+        <textarea
+          name="job_descrip"
+          id="jobDesc"
+          placeholder="Ejemplo: Buscamos un Desarrollador Backend con experiencia en Python y Flask, conocimientos en REST APIs, bases de datos SQL y NoSQL, trabajo en equipo ágil..."
+          required
+          maxlength="5000"
+        ></textarea>
+        <div class="char-count"><span id="charCount">0</span> / 5000 caracteres</div>
+      </div>
+
+    </div><!-- /steps -->
+
+    <!-- Step 3: Resultados del Análisis (Oculto por defecto) -->
+<div class="card" id="contenedor-resultados" style="display: none; margin-top: 20px;">
+  <div class="card-header">
+    <div class="step-num">3</div>
+    <div>
+      <div class="card-title">Análisis de la IA</div>
+      <div class="card-desc">Generando en tiempo real...</div>
+    </div>
+  </div>
+  <!-- Aquí JavaScript inyectará el texto -->
+  <div id="texto-resultados" style="white-space: pre-wrap; line-height: 1.6;"></div>
+</div>
+
+    <!-- Submit -->
+    <div class="submit-wrap" style="margin-top:28px;">
+      <button type="submit" id="submitBtn">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
+        Analizar candidato
+      </button>
+    </div>
+    
+  </form>
+</div>
+
+<!-- Loader -->
+<div class="loader-overlay" id="loaderOverlay">
+  <div class="spinner"></div>
+  <span class="loader-text">Analizando el CV, un momento…</span>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+
+    <!-- LÓGICA DE JINJA2 (PYTHON) PARA LEER EL MENSAJE -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <!-- Creamos el contenedor de la alerta solo si hay un mensaje -->
+          <div id="alerta" class="alerta-temporal">
+              {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+
+
+<script>
+  // --- Drag & drop ---
+  const dropzone   = document.getElementById('dropzone');
+  const fileInput  = document.getElementById('cvFile');
+  const fileSelected = document.getElementById('fileSelected');
+  const fileName   = document.getElementById('fileName');
+
+  function handleFile(file) {
+    if (!file) return;
+    fileName.textContent = file.name;
+    fileSelected.classList.add('show');
+  }
+  fileInput.addEventListener('change', () => handleFile(fileInput.files[0]));
+
+  dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragging'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragging'));
+
+  dropzone.addEventListener('drop', e => {  
+    e.preventDefault();
+    dropzone.classList.remove('dragging');
+    const f = e.dataTransfer.files[0];
+    if (f) { fileInput.files = e.dataTransfer.files; handleFile(f); }
+  });
+
+  // --- Char counter ---
+  const jobDesc   = document.getElementById('jobDesc');
+  const charCount = document.getElementById('charCount');
+  jobDesc.addEventListener('input', () => charCount.textContent = jobDesc.value.length);
+
+  // --- Toast helper ---
+  function showToast(msg, type = 'error') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = `toast ${type} show`;
+    setTimeout(() => t.classList.remove('show'), 4000);
+  }
+
+// SEGUIMOS CON EL ERROR
+
+// --- Form submit ---
+
+  // HACEMOS CONSTANTES ENCAPSULANDO LOS ATRIBUTOS DEL HTML PARA 
+  // INTERACTUAR CON ELLOS
+  const form      = document.getElementById('analyzeForm');
+  const submitBtn = document.getElementById('submitBtn');
+  const loader    = document.getElementById('loaderOverlay');
+
+
+  // ESCUCHADOR DE EVENTOS DEL "submit", FUNCION ASINCRONA, e REPRESENTA EL 
+  // OBJETO DEL EVENTO EN SI
+  form.addEventListener('submit', async (e) => {
+    //  EVITAMOS QUE EL NAVEGADOR TENGA EL COMPORTAMIENTO POR DEFAULT DE 
+    // RECARGAR LA PAGINA CUANDO ENVIAMOS UN FORMULARIO
+    e.preventDefault();
+
+    // VALIDACIONES
+    
+    // REVISA SI EL USUARIO ENVIO ARHCIVO O NO
+    if (!fileInput.files.length) {
+      showToast('Por favor sube un archivo de CV antes de continuar.'); return;
+    }
+    
+    // CUENTA CUANTOS CARACTERES ESCRIBIO EL USUARIO, SI SON MENOS DE 30 
+    // DETIENE EL PROCESO
+    if (jobDesc.value.trim().length < 30) {
+      showToast('La descripción del puesto es demasiado corta.'); return;
+    }
+
+
+    // 
+    // ESTADO DE CARGA
+
+    // DESACTIVA EL BOTON PARA QUE EL USUARIO LE DE "DOBLE CLIC"
+    submitBtn.disabled = true;
+    // EFECTO CON CSS PARA QUE LA PANTALAL SE VEA BORROSA MIENTRAS CARGA LA PAGINA
+    loader.classList.add('show');
+
+    // CONTENEMOS DATOS DE LOS FORMULARIOS PARA ENVIARSELA AL SERVIDOR (INCLUYE EL PDF Y 
+    // CAMPO DE TEXTO)
+
+    
+    const formData = new FormData(form);
+
+try {
+      // MANDAMOS PAQUETE DE DATOS AL BACKEND 
+      const res = await fetch(form.action, { method: "POST", body: formData });
+      
+      if (!res.ok) {
+        const errorText = await res.json();
+        throw new Error(`Error: ${errorText.fail} (${errorText.error_details})`);
+      }
+
+      // --- AQUÍ EMPIEZA LA LÓGICA DE STREAMING QUE PEGASTE ---
+
+      // 1. Quitamos la pantalla negra de carga, porque ya empezaron a llegar los datos
+      loader.classList.remove('show');
+
+      // 2. Buscamos el contenedor vacío que agregamos en el HTML y lo hacemos visible
+      const contenedorResultados = document.getElementById('contenedor-resultados');
+      const textoResultados = document.getElementById('texto-resultados');
+      contenedorResultados.style.display = 'block'; 
+      textoResultados.innerHTML = ''; // Lo limpiamos por si hay consultas previas
+
+      // 3. Preparamos las herramientas para leer el "chorro" de datos|
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+
+      // 4. Bucle infinito: mientras Flask siga enviando datos, JS sigue pintando
+      while (true) {
+        // Leemos el siguiente pedacito que llegó por el cable
+
+        // esta parte espera pacientemente a que Flask envie datos, las llaves 
+        // con { done, value } evaluan lo que read() regresa (un objeto con 2 etiquetas)
+        // en "done" recibimos un valor booleano que indica si el proceso sigue o termina
+        // en "value" es la informacion que recibe js de flask en formato binario
+        const { done, value } = await reader.read();
+        
+        // Si 'done' es true, significa que Flask terminó de enviar todo. Rompemos el bucle.
+        if (done) break; 
+
+        // Convertimos los datos crudos a texto normal
+        const fragmentoTexto = decoder.decode(value, { stream: true });
+
+        // "fragmentoTexto" es el texto que estabamos convirtiendo de texto a binario 
+        // y lo vamos pegando (acumulando) a "textoResultados" el contenedor de la 
+        // pagina, sin borrar lo que ya se había escrito antes. Para crear el 
+        // efecto máquina de escribir
+        textoResultados.innerHTML += fragmentoTexto;
+      }
+      
+      showToast('¡Análisis completado con éxito!', 'info');
+      
+      // --- AQUÍ TERMINA LA LÓGICA DE STREAMING ---
+      
+
+    // ATRAPA CUALQUIER ERROR QUE HALLA OCURRIDO DENTRO DEL TRY 
+    } catch (err) {
+      console.error(err); // IMPRIMIMOS EL ERROR 
+      showToast(err.message || 'Ocurrió un error. Intenta de nuevo.'); // MOSTRAMOS EL ERROR EN UN COLOR ROJO AMIGABLE
+    
+    // SE EJECUTA SIEMPRE 
+    } finally {
+
+      // QUITAMOS EL BLOQUEO DE BOTON Y DEJAMOS DE MOSTRAR LA PANTALLA DE CARGA, HACIENDO
+      // LA PAGINA INTERACTIVA
+      submitBtn.disabled = false;
+      loader.classList.remove('show');
+    }
+  });
+
+    // BOTON QUITADOR DE ARCHIVOS
+    const boton = document.getElementById("clearFileBtn")
+
+    boton.addEventListener("click", () => {
+      fileInput.value = "";
+
+      fileSelected.classList.remove('show');
+
+    })
+
+
+  // FUNCION CERRAR SESION POR INACTIVIDAD
+
+  
+    // guardando una función entera dentro de una variable llamada tiempoInactividad.
+    // Es como empaquetar toda nuestra lógica del temporizador en una caja
+    let tiempoInactividad = function () {
+        // Esta variable es la más importante. Es el contenedor de 
+        // nuestro cronómetro. Al declararla aquí arriba 
+        // (dentro de la función principal), todas las sub-funciones de 
+        // adentro pueden verla y modificarla.
+        let tiempo;
+        
+        // Esta función solo se ejecuta cuando el tiempo se agota
+        function cerrarSesion() {
+            // creamos un anuncio para mostrar en el navegador, 
+            // congela la pantalla con el mensaje.
+            alert("Tu sesión ha expirado por inactividad.");
+            // Envía al navegador a esa ruta para que Flask-Login destruya la sesión en el servidor.
+            window.location.href = "/cerrar_sesion"; 
+        }
+
+        // Esta funcion se ejecuta cada segundo
+        function resetearTemporizador() {
+            clearTimeout(tiempo);
+            // 903000 milisegundos = 15 minutos con 03 segundos
+            tiempo = setTimeout(cerrarSesion, 903000); 
+        }
+
+        // Estos son eventos, se quedan escuchando al navegador para ver que 
+        // hace el usuario, por cada evento podemos hacer que se ejecute una funcion
+        window.onload = resetearTemporizador;
+        window.onmousemove = resetearTemporizador; // Si el usuario mueve el mouse, se ejecuta funcion reset de tiempo
+        window.onmousedown = resetearTemporizador; // Si el usuario hace Clics, se ejcuta la funcion reset de tiempo
+        window.ontouchstart = resetearTemporizador; // Pantallas táctiles
+        window.onkeypress = resetearTemporizador;   // Teclado
+    };
+
+    // Al final de todo, fuera de la caja, llamamos a 
+    // la función principal. Esto ejecuta todo el bloque de arriba
+    tiempoInactividad();
+
+  // 1. Buscamos si existe el elemento de la alerta en la página
+        const alerta = document.getElementById('alerta');
+
+        if (alerta) {
+            // 2. Programamos un temporizador (3000 milisegundos = 3 segundos)
+            setTimeout(() => {
+                // Le añadimos la clase que la vuelve invisible
+                alerta.classList.add('oculto');
+                
+                // 3. Opcional: Borramos el elemento del HTML después de la animación
+                setTimeout(() => alerta.remove(), 500);
+            }, 5000);
+        }
+
+</script>
+</body>
+</html>

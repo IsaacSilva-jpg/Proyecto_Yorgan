@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Soporte Técnico - Yorgan</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0f14;
+      --surface: #161a23;
+      --card: #1c2130;
+      --border: #2a3045;
+      --accent: #e8c46a;
+      --accent2: #5e8cf4;
+      --text: #e8f0e8;
+      --muted: #7a85a0;
+      --radius: 16px;
+      
+      /* 1. Definimos las variables de estado que tus alertas necesitan */
+      --danger: #ef4444;
+      --success: #22c55e;
+    } 
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 86px 20px 80px;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: -200px; left: 50%;
+      transform: translateX(-50%);
+      width: 800px; height: 600px;
+      background: radial-gradient(ellipse, rgba(94,140,244,0.08) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* --- CONTENEDOR DE ALERTAS (Flotante arriba a la derecha) --- */
+    .alerts {
+      position: fixed;
+      top: 76px; /* 56px de tu navbar + 20px de espacio libre para que respire */
+      right: 24px;
+      z-index: 1000; /* Nos asegura que esté por encima de cualquier otra capa */
+      display: flex;
+      flex-direction: column;
+      gap: 12px; /* Espaciado automático si se acumulan varias alertas */
+      max-width: 380px;
+      width: calc(100% - 48px); /* Hace que sea responsivo en teléfonos celulares */
+    }
+
+    /* Estilo base para cada alerta individual */
+    .alert {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 400;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      animation: slideIn 0.3s ease forwards; /* Pequeña animación de entrada */
+    }
+
+    /* Ajuste para el icono SVG dentro de la alerta */
+    .alert svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0; /* Evita que el icono se deforme si el texto es largo */
+      stroke: currentColor; /* Hace que el icono use el mismo color del texto asignado */
+    }
+
+    /* Estilos específicos que nos compartiste (¡Funcionan gracias a las variables en :root!) */
+    .alert-danger {
+      background: #271414;
+      border: 1px solid var(--danger);
+      color: var(--danger); 
+    }
+
+    .alert-success {
+      background: #11241d;
+      border: 1px solid var(--success);
+      color: var(--success); 
+    }
+
+    /* Animación sutil para que aparezca desde la derecha */
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .wrapper {
+      width: 100%; max-width: 780px;
+      position: relative; z-index: 1;
+    }
+
+    /* --- Navbar --- */
+    .navbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 56px;
+      background: rgba(13, 15, 20, 0.85);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 50;
+    }
+    .navbar-brand {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent);
+      text-decoration: none;
+      letter-spacing: -0.01em;
+    }
+    .navbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 400;
+      padding: 6px 14px;
+      border-radius: 8px;
+      transition: background 0.2s, color 0.2s;
+    }
+    .nav-link:hover {
+      background: rgba(94, 140, 244, 0.1);
+      color: var(--text);
+    }
+    .nav-link.danger:hover {
+      background: rgba(239, 68, 68, 0.1);
+      color: #fc8181;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      margin-bottom: 44px;
+      animation: fadeDown 0.7s ease both;
+    }
+    .badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: rgba(94,140,244,0.12);
+      border: 1px solid rgba(94,140,244,0.25);
+      color: var(--accent2);
+      font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 5px 14px; border-radius: 999px;
+      margin-bottom: 20px;
+      font-weight: 500;
+    }
+    .badge-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent2);
+    }
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+    h1 span { color: var(--accent); }
+    .subtitle {
+      margin-top: 14px;
+      font-size: 15px; color: var(--muted);
+      max-width: 420px; margin-inline: auto;
+      line-height: 1.6;
+    }
+
+    /* Form Card Container */
+    .form-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      animation: fadeUp 0.6s 0.2s ease both;
+      transition: border-color 0.3s;
+    }
+    .form-card:hover { 
+      border-color: rgba(94,140,244,0.3); 
+    }
+
+    /* Form Layout Grid (Fallback Table-like Block) */
+    .form-row {
+      display: block;
+      margin-bottom: 20px;
+    }
+    
+    .form-group-half {
+      width: 48.5%;
+      display: inline-block;
+      vertical-align: top;
+    }
+    .form-group-half:last-child {
+      float: right;
+    }
+
+    .form-group-full {
+      width: 100%;
+      margin-bottom: 24px;
+    }
+
+    /* Inputs & Textarea */
+    .form-control {
+      width: 100%;
+      background: rgba(13, 15, 20, 0.5);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14.5px;
+      padding: 16px 20px;
+      transition: border-color 0.25s, box-shadow 0.25s;
+      outline: none;
+    }
+    
+    .form-control:focus {
+      border-color: var(--accent2);
+      box-shadow: 0 0 0 3px rgba(94, 140, 244, 0.15);
+    }
+
+    .form-control::placeholder {
+      color: var(--muted);
+      opacity: 0.8;
+    }
+
+    select.form-control {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%237a85a0' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 20px center;
+      background-size: 16px;
+      cursor: pointer;
+    }
+
+    select.form-control option {
+      background: var(--card);
+      color: var(--text);
+    }
+
+    textarea.form-control {
+      resize: vertical;
+      min-height: 140px;
+    }
+
+    /* Submit Button */
+    .btn-submit {
+      width: 100%;
+      padding: 16px;
+      background: #1d5bf2; 
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14.5px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(29, 91, 242, 0.2);
+      transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+    }
+
+    /* Cuando el botón tenga el atributo 'disabled', cambiaremos su aspecto */
+    .btn-submit:disabled {
+      background: #2a3045; /* Un tono más oscuro/grisáceo que combine con tu paleta */
+      color: var(--muted);  /* El color de texto apagado que ya usas en el proyecto */
+      cursor: not-allowed;  /* Cambia el cursor del mouse a un círculo rojo de "prohibido" */
+      box-shadow: none;     /* Le quita la sombra azul de botón activo */
+    }
+    .btn-submit:hover {
+      background: #164ec4;
+      box-shadow: 0 6px 16px rgba(29, 91, 242, 0.3);
+    }
+
+    .btn-submit:active {
+      transform: scale(0.99);
+    }
+
+    /* Back button Link */
+    .back-wrap {
+      margin-top: 24px;
+      text-align: center;
+      animation: fadeUp 0.6s 0.4s ease both;
+    }
+    .btn-back {
+      display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+      padding: 12px 24px;
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px; font-weight: 400;
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.25s, color 0.25s, background 0.25s;
+    }
+    .btn-back:hover {
+      border-color: var(--accent2);
+      color: var(--text);
+      background: rgba(94,140,244,0.05);
+    }
+    .btn-back svg { width: 16px; height: 16px; stroke: currentColor; }
+
+    /* Animations */
+    @keyframes fadeDown {
+      from { opacity:0; transform: translateY(-18px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity:0; transform: translateY(18px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+
+    @media (max-width: 580px) {
+      .form-group-half {
+        width: 100%;
+        margin-bottom: 20px;
+      }
+      .form-group-half:last-child {
+        float: none;
+      }
+      .form-card { padding: 24px 20px; }
+      .alerts {
+        top: 20px; /* En móviles pequeños se pega arriba del todo si prefieres */
+        right: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Código Jinja para renderizar las alertas de Flask en la interfaz -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="alerts">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">
+          <svg fill="none" viewBox="0 0 24 24" stroke-width="2" >
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+          </svg>
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<!-- Barra de navegación principal -->
+<nav class="navbar">
+  <a href="/" class="navbar-brand">Yorgan</a>
+  <div class="navbar-right">
+    <a href="/" class="nav-link">Home</a>
+    <a href="/cerrar_sesion" class="nav-link danger">Cerrar sesión</a>
+  </div>
+</nav>
+
+<div class="wrapper">
+
+  <header>
+
+    <h1>Soporte <span>técnico</span></h1>
+    <p class="subtitle">¿Tienes alguna sugerencia o experimentas algún problema? Cuéntanos y te ayudaremos lo antes posible.</p>
+  </header>
+
+  <!-- Contenedor del Formulario -->
+  <div class="form-card">
+    <form action="/soporte" method="POST", id= "formulario" autocomplete="off">
+      {{ form.hidden_tag() }}
+      
+      <div class="form-row">
+        <div class="form-group-half">
+          <input 
+            type="text" 
+            id="nombre" 
+            name="nombre" 
+            class="form-control" 
+            placeholder="Tu nombre" 
+            required>
+        </div>
+        
+        <div class="form-group-half">
+          <input 
+            type="email" 
+            id="correo" 
+            name="correo" 
+            class="form-control" 
+            placeholder="Tu correo electrónico" 
+            required>
+        </div>
+      </div>
+
+      <div class="form-group-full">
+        {{ form.opcion(class="form-control", onchange="this.style.color = this.value ? 'var(--text)' : 'var(--muted)'", style="color: var(--muted);") }}
+      </div>
+
+      <div class="form-group-full">
+        <textarea 
+          id="descripcion_user" 
+          name="mensaje" 
+          class="form-control" 
+          placeholder="Tu mensaje" 
+          required></textarea>
+      </div>
+
+      <p>
+        *** Funcion disponible proximamente ***
+      </p>
+      <br>
+      <button type="submit" class="btn-submit" id="boton_enviador" disabled>
+        Enviar mensaje
+      </button>
+
+    </form>
+  </div>
+
+  <div class="back-wrap">
+    <a href="/" class="btn-back">
+      <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+      </svg>
+      Volver al inicio
+    </a>
+  </div>
+
+</div>
+
+<script>
+
+
+
+
+    let tiempoInactividad = function () {
+        let tiempo;
+        
+        function cerrarSesion() {
+            alert("Tu sesión ha expirado por inactividad.");
+            window.location.href = "/cerrar_sesion"; 
+        }
+
+        function resetearTemporizador() {
+            clearTimeout(tiempo);
+            tiempo = setTimeout(cerrarSesion, 900000); 
+        }
+
+        window.onload = resetearTemporizador;
+        window.onmousemove = resetearTemporizador;
+        window.onmousedown = resetearTemporizador;
+        window.ontouchstart = resetearTemporizador;
+        window.onkeypress = resetearTemporizador;
+    };
+
+    tiempoInactividad();
+
+    const formulario_principal = document.getElementById("formulario")
+    const boton_enviador = document.getElementById("boton_enviador")
+
+    formulario_principal.addEventListener("submit", function(evento){
+
+      // evento.preventDefault();
+
+      setTimeout(function(){
+        boton_enviador.disabled = true;
+      },50);
+        
+    });
+
+  window.addEventListener("pageshow", function(event){
+    
+    if (event.persisted){
+      const form = document.querySelector("form");
+      if (form){
+        form.reset();
+      }
+    }
+  });
+
+
+</script>
+
+</body>
+</html>

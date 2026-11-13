@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resultado del Análisis</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0f14;
+      --surface: #161a23;
+      --card: #1c2130;
+      --border: #2a3045;
+      --accent: #e8c46a;
+      --accent2: #5e8cf4;
+      --text: #e8f0e8;
+      --muted: #7a85a0;
+      --success: #4ade80;
+      --danger: #f87171;
+      --radius: 16px;
+      --nom: #2ff1f1;
+    } 
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 86px 20px 80px;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: -200px; left: 50%;
+      transform: translateX(-50%);
+      width: 800px; height: 600px;
+      background: radial-gradient(ellipse, rgba(94,140,244,0.08) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -200px; right: -100px;
+      width: 600px; height: 500px;
+      background: radial-gradient(ellipse, rgba(232,196,106,0.05) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrapper {
+      width: 100%; max-width: 780px;
+      position: relative; z-index: 1;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      margin-bottom: 44px;
+      animation: fadeDown 0.7s ease both;
+    }
+    .badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: rgba(94,140,244,0.12);
+      border: 1px solid rgba(94,140,244,0.25);
+      color: var(--accent2);
+      font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 5px 14px; border-radius: 999px;
+      margin-bottom: 20px;
+      font-weight: 500;
+    }
+    .badge-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent2);
+    }
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+    h1 span { color: var(--accent); }
+    .subtitle {
+      margin-top: 14px;
+      font-size: 15px; color: var(--muted);
+      max-width: 420px; margin-inline: auto;
+      line-height: 1.6;
+    }
+
+    /* Verdict card */
+    .verdict-card {
+      border-radius: var(--radius);
+      padding: 32px 36px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      border: 1px solid;
+      animation: fadeUp 0.6s 0.15s ease both;
+      position: relative;
+      overflow: hidden;
+    }
+    .verdict-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0.04;
+    }
+    .verdict-card.yes {
+      background: rgba(74,222,128,0.06);
+      border-color: rgba(74,222,128,0.3);
+    }
+    .verdict-card.yes::before {
+      background: var(--success);
+    }
+    .verdict-card.no {
+      background: rgba(248,113,113,0.06);
+      border-color: rgba(248,113,113,0.3);
+    }
+    .verdict-card.no::before {
+      background: var(--danger);
+    }
+
+
+
+    /* Toast */
+    .toast {
+      display: none;
+      position: fixed; bottom: 28px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 22px;
+      font-size: 14px;
+      z-index: 200;
+      transition: transform 0.3s, opacity 0.3s;
+      opacity: 0;
+    }
+    .toast.show {
+      display: block;
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    .toast.error { border-color: rgba(239,68,68,0.4); color: #fc8181; }
+    .toast.info  { border-color: rgba(94,140,244,0.4); color: var(--accent2); }
+
+
+    .verdict-icon {
+      width: 60px; height: 60px;
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      font-size: 26px;
+    }
+    .verdict-card.yes .verdict-icon {
+      background: rgba(74,222,128,0.12);
+      border: 1px solid rgba(74,222,128,0.25);
+    }
+    .verdict-card.no .verdict-icon {
+      background: rgba(248,113,113,0.12);
+      border: 1px solid rgba(248,113,113,0.25);
+    }
+
+    .verdict-content {}
+    .verdict-label {
+      font-size: 12px; letter-spacing: 0.12em;
+      text-transform: uppercase; font-weight: 500;
+      color: var(--muted); margin-bottom: 6px;
+    }
+    .verdict-answer {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem; font-weight: 700;
+      line-height: 1;
+    }
+    .verdict-card.yes .verdict-answer { color: var(--success); }
+    .verdict-card.no  .verdict-answer { color: var(--danger); }
+    .verdict-sub {
+      font-size: 13px; color: var(--muted);
+      margin-top: 6px; line-height: 1.5;
+    }
+
+    /* General card */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px 36px;
+      margin-bottom: 20px;
+      animation: fadeUp 0.6s ease both;
+      transition: border-color 0.3s;
+    }
+    .card:hover { border-color: rgba(94,140,244,0.3); }
+    .card:nth-child(2) { animation-delay: 0.25s; }
+    .card:nth-child(3) { animation-delay: 0.35s; }
+    .card:nth-child(4) { animation-delay: 0.45s; }
+
+    .card-header {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 18px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-icon {
+      width: 32px; height: 32px;
+      border-radius: 9px;
+      background: rgba(232,196,106,0.1);
+      border: 1px solid rgba(232,196,106,0.2);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .section-icon svg { width: 15px; height: 15px; stroke: var(--accent); }
+    .section-title {
+      font-size: 14px; font-weight: 500;
+      color: var(--text); letter-spacing: 0.01em;
+    }
+
+    /* Justification text rendering */
+    .justification-body {
+      font-size: 14.5px;
+      color: #b8bdd0;
+      line-height: 1.8;
+    }
+    .justification-body p {
+      margin-bottom: 14px;
+    }
+    .justification-body p:last-child { margin-bottom: 0; }
+
+    /* Inline SI / NO highlight */
+    .tag-si {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(74,222,128,0.12);
+      border: 1px solid rgba(74,222,128,0.25);
+      color: var(--success);
+      font-size: 12px; font-weight: 500;
+      padding: 2px 9px; border-radius: 999px;
+      letter-spacing: 0.04em;
+      vertical-align: middle;
+    }
+    .tag-no {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(248,113,113,0.12);
+      border: 1px solid rgba(248,113,113,0.25);
+      color: var(--danger);
+      font-size: 12px; font-weight: 500;
+      padding: 2px 9px; border-radius: 999px;
+      letter-spacing: 0.04em;
+      vertical-align: middle;
+    }
+
+    /* Key phrases (bold in markdown → highlighted) */
+    .justification-body strong {
+      color: var(--text);
+      font-weight: 500;
+    }
+    .justification-body em {
+      color: var(--accent);
+      font-style: normal;
+      font-weight: 400;
+    }
+
+    span.tird_text {
+      color: var(--nom);
+      font-style: normal;
+      font-weight: 400;
+    }
+    
+    /* Bullet list style */
+    .justification-body ul {
+      list-style: none;
+      display: flex; flex-direction: column; gap: 10px;
+      margin-top: 4px;
+    }
+    .justification-body ul li {
+      display: flex; gap: 10px; align-items: flex-start;
+    }
+    .justification-body ul li::before {
+      content: '';
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--accent2);
+      flex-shrink: 0;
+      margin-top: 8px;
+    }
+
+    /* Back button */
+    .back-wrap {
+      margin-top: 8px;
+      animation: fadeUp 0.6s 0.55s ease both;
+    }
+    .btn-back {
+      display: flex; align-items: center; justify-content: center; gap: 9px;
+      width: 100%;
+      padding: 14px 28px;
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px; font-weight: 400;
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.25s, color 0.25s, background 0.25s;
+    }
+    .btn-back:hover {
+      border-color: var(--accent2);
+      color: var(--text);
+      background: rgba(94,140,244,0.05);
+    }
+    .btn-back svg { width: 16px; height: 16px; stroke: currentColor; }
+
+    /* Animations */
+    @keyframes fadeDown {
+      from { opacity:0; transform: translateY(-18px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity:0; transform: translateY(18px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+
+    @media (max-width: 520px) {
+      .card, .verdict-card { padding: 24px 20px; }
+      .verdict-icon { width: 48px; height: 48px; font-size: 20px; }
+      .verdict-answer { font-size: 1.6rem; }
+    }
+
+
+    /* --- Navbar --- */
+    .navbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 56px;
+      background: rgba(13, 15, 20, 0.85);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 50;
+    }
+    .navbar-brand {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent);
+      text-decoration: none;
+      letter-spacing: -0.01em;
+    }
+    .navbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 400;
+      padding: 6px 14px;
+      border-radius: 8px;
+      transition: background 0.2s, color 0.2s;
+    }
+    .nav-link:hover {
+      background: rgba(94, 140, 244, 0.1);
+      color: var(--text);
+    }
+    .nav-link.danger:hover {
+      background: rgba(239, 68, 68, 0.1);
+      color: #fc8181;
+    }
+    .nav-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      object-fit: cover;
+      margin-left: 8px;
+    }
+    
+</style>
+</head>
+<body>
+
+<!-- Barra de navegación principal -->
+<nav class="navbar">
+  <!-- Esquina superior izquierda: nombre del programa -->
+  <a href="/" class="navbar-brand">Yorgan</a>
+
+  <!-- Esquina superior derecha: links de navegación + foto de cuenta -->
+  <div class="navbar-right">
+    <a href="/" class="nav-link">Home</a>
+    
+    <form id="logoutform" action="{{ url_for('auth.cerrar_sesion') }}" method="POST">
+      <button  type="submit" class="nav-link danger" style="background: none; border: none; cursor: pointer; font-family: inherit; font-size: inherit;" >Cerrar sesión</button>
+    </form>
+    
+    <!-- Foto de la cuenta de Google del usuario -->
+
+  </div>
+</nav>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+
+<div class="wrapper">
+
+  <header>
+    <div class="badge">
+      <span class="badge-dot"></span>
+      Resultado del análisis
+    </div>
+  </header>
+
+
+<!-- ══ VERDICT BANNER ══ -->
+  <!-- Por defecto lo dejamos gris/neutral hasta que JS sepa si es SI o NO -->
+  <div id="verdictCard" class="verdict-card" style="background: rgba(122,133,160,0.06); border-color: rgba(122,133,160,0.3);">
+    <div id="verdictIcon" class="verdict-icon" style="background: rgba(122,133,160,0.12); border: 1px solid rgba(122,133,160,0.25);">
+      <span style="color: var(--muted)">?</span>
+    </div>
+    <div class="verdict-content">
+      <div class="verdict-label">Calificación IA</div>
+      <div id="verdictAnswer" class="verdict-answer" style="color: var(--muted)">Analizando...</div>
+      <div id="verdictSub" class="verdict-sub">Esperando el dictamen de Gemini.</div>
+    </div>
+  </div>
+
+
+<!-- ══ JUSTIFICATION CARD ══ -->
+  <div class="card">
+    <div class="card-header">
+      <div class="section-icon">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.6">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"/>
+        </svg>
+      </div>
+      <span class="section-title">Justificación del análisis</span>
+    </div>
+    
+    <div class="justification-body" id="justificationBody">
+      {% if not modo_stream %}
+        <!-- Si viene de la BD, pintamos el texto limpio directamente -->
+        <p>{{ justificacion_db }}</p>
+      {% else %}
+        <!-- Si es nuevo, dejamos el texto de carga para que JS haga el streaming -->
+        <p>Procesando información del CV y la vacante...</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Back button -->
+  <div class="back-wrap">
+    <a href="/analizador" class="btn-back">
+      <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+      </svg>
+      Analizar otra vacante
+    </a>
+  </div>
+
+</div><!-- /wrapper -->
+
+<script>
+
+  const csrfToken = document.querySelector(
+      'meta[name="csrf-token"]'
+      ).getAttribute("content");
+      
+  const logoutForm = document.getElementById('logoutform');
+
+    // escuchamos el evento 'submit'
+    logoutForm.addEventListener('submit', async (event) => {
+      // Prevenimos que el formulario recargue la página automáticamente
+      event.preventDefault();
+
+      // obtenemos la URL del atributo 'action' del formulario
+      const url = logoutForm.action;
+
+    try {
+      const response = await fetch(logoutForm.action, {
+        method: 'POST',
+        headers: {
+          "X-CSRFToken": csrfToken
+        }
+      });
+
+      // El navegador ya siguió la redirección internamente. 
+      // Ahora cambiamos la pantalla a la URL final que envió el servidor.
+      window.location.href = response.url; 
+
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  });
+
+
+// Variables globales para ir acumulando el texto
+  let veredictoDetectado = false;
+  const justificationBody = document.getElementById('justificationBody');
+
+  // Función para darle formato al texto (la misma que ya tenías)
+  function renderJustification(text) {
+    let paragraphs = text.split(/\n{2,}/).flatMap(p => p.split(/\n/)).filter(p => p.trim());
+    return paragraphs.map(para => {
+      let html = para.replace(/\*\*\*([^*]+)\*\*\*/g, '<span class="tird_text">$1</span>');
+      html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+      return `<p>${html}</p>`;
+    }).join('');
+  }
+
+  
+
+  // Función para cambiar los colores de la tarjeta de veredicto
+  function aplicarVeredicto(esSi) {
+    const card = document.getElementById('verdictCard');
+    const icon = document.getElementById('verdictIcon');
+    const answer = document.getElementById('verdictAnswer');
+    const sub = document.getElementById('verdictSub');
+
+    // Limpiamos los estilos neutros en línea
+    card.removeAttribute('style');
+    icon.removeAttribute('style');
+    
+    // Removemos clases previas por si acaso
+    card.classList.remove('yes', 'no');
+
+    if (esSi) {
+      card.classList.add('yes');
+      icon.innerHTML = '✓';
+      answer.textContent = 'SÍ';
+      answer.style.color = 'var(--success)';
+      sub.textContent = 'El candidato cumple con el perfil solicitado.';
+    } else {
+      card.classList.add('no');
+      icon.innerHTML = '✗';
+      answer.textContent = 'NO';
+      answer.style.color = 'var(--danger)';
+      sub.textContent = 'El candidato no cumple con el perfil solicitado.';
+    }
+  }
+
+  // La función asíncrona principal que dispara el stream
+  async function iniciarStream() {
+    try {
+      console.log("Estamos por iniciar peticion 'stream'");
+      // Hacemos una petición a /mostrar para que Flask sepa que queremos el stream, no el HTML
+      
+      const id_analisis = {{ identi_analisis | tojson }};
+ 
+      const response = await fetch(`/mostrar/${id_analisis}`,{
+        method: 'POST', 
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          "X-CSRFToken": csrfToken
+        }
+      });
+      
+      // CLONAMOS RESPUESTA PARA CONTROLAR ERRORES
+
+      const response_para_errores = response.clone();
+      
+      // USAMOS EL OBJETO RESPONSE PARA VERIFICAR CODIGO HTTP DE ERROR 
+      // EN CASO DE TENER ALGUNO MOSTRAMOS ERROR
+      if (response.status === 429) {
+        
+        const answer = document.getElementById('verdictAnswer');
+        const sub = document.getElementById('verdictSub');
+        showToast("Se excedió el limite de analisis ERROR 429")
+        justificationBody.innerHTML = "No se pudo procesar el analisis...";
+        answer.innerHTML= "Sin datos";
+        sub.innerHTML= "";
+
+      }
+
+      if (response.status === 400) {
+        const textoError = await response_para_errores.text(); 
+        showToast(textoError);
+        const answer = document.getElementById('verdictAnswer');
+        const sub = document.getElementById('verdictSub');
+        justificationBody.innerHTML = "No se pudo procesar el analisis...";
+        answer.innerHTML= "Sin datos";
+        sub.innerHTML= "";
+        
+        return;
+
+      }
+      
+      if (!response.ok) {
+        const textoError = await response_para_errores.text(); 
+        showToast(textoError);
+        
+        const answer = document.getElementById('verdictAnswer');
+        const sub = document.getElementById('verdictSub');
+        justificationBody.innerHTML = "No se pudo procesar el analisis...";
+        answer.innerHTML= "Sin datos";
+        sub.innerHTML= "";
+
+        return;
+
+      }
+
+      console.log("aca estamos creando el lector");
+
+      let cantidad_palabras;
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let textoAcumulado = "";
+      let textoParaMostrar= "";
+
+
+      // Limpiamos el texto de "Procesando..."
+      justificationBody.innerHTML = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (done) {
+          break; // Terminó el stream
+        }
+
+        // Decodificamos el nuevo fragmento que llegó
+        const fragmentoTexto = decoder.decode(value, { stream: true });
+        textoAcumulado += fragmentoTexto;
+
+        // --- MAGIA: Detectar el veredicto al vuelo ---
+        // Buscamos si en el texto acumulado ya llegó la palabra CALIFICACION IA: SI o NO
+        if (!veredictoDetectado && textoAcumulado.includes("CALIFICACION IA:")) {
+          const despuesDeCalificacion = textoAcumulado.split("CALIFICACION IA:")[1].trim().toUpperCase();
+          // Solo evaluamos si ya llegó la palabra SI o NO completa (más de 1 letra por si acaso)
+          if (despuesDeCalificacion.length >= 2) {
+             if (despuesDeCalificacion.startsWith("SI") || despuesDeCalificacion.startsWith("SÍ") || despuesDeCalificacion.startsWith("YES")) {
+                aplicarVeredicto(true);
+                veredictoDetectado = true;
+             } else if (despuesDeCalificacion.startsWith("NO")) {
+                aplicarVeredicto(false);
+                veredictoDetectado = true;
+             }
+          }
+        }
+
+        // Extraer la justificación para renderizarla (ignorando la calificación si es posible)
+        console.log("Alcanzamos a crear la variable")
+        textoParaMostrar = textoAcumulado;
+        console.log("tenemos variable, metemos info: ", textoParaMostrar)
+        if (textoAcumulado.includes("Justificación:")) {
+           textoParaMostrar = textoAcumulado.split("Justificación:")[1];  
+           console.log("metemos mas     : ", textoParaMostrar)
+        } else if (textoAcumulado.includes("Justificacion:")) {
+           textoParaMostrar = textoAcumulado.split("Justificacion:")[1];
+        }
+
+        if (cantidad_palabras < 10) {
+
+          // POR QUE TODO EL ANALISIS LO TINTA ROJO!!?
+          // justificationBody.innerHTML = `<p style="color: var(--danger)"> ${textoParaMostrar} </p>`; <-- por que este no funciona? y hace rato si lo hacia?
+          justificationBody.style.color= "#f87171";
+          console.log("Un error muy probable")
+        }  
+
+        // Renderizamos el texto formateado
+        justificationBody.innerHTML = renderJustification(textoParaMostrar);
+      }
+        
+      console.log("tenemos esta cantidad de caracteres", textoParaMostrar.length); 
+      cantidad_palabras= textoParaMostrar.trim().split(/\s+/).length;
+      console.log("cantidad de palabras: ", cantidad_palabras)
+      console.log("Resultado: ", textoParaMostrar)
+
+      
+
+      console.log("Análisis completado");
+
+    } catch (error) {
+      
+      console.error(error)
+      const answer = document.getElementById('verdictAnswer');
+      const sub = document.getElementById('verdictSub');
+      showToast("Error durante la generacion de la respuesta")
+      justificationBody.innerHTML = "No se pudo procesar el analisis...";
+      answer.innerHTML= "Sin datos";
+      sub.innerHTML= "";    
+    }}
+
+  // SCROLL AUTOMATICO
+      
+  const contenedor = document.getElementById('justificationBody');
+  const observer = new MutationObserver((mutationsList, observer) => {
+    // 1. Hacemos el pequeño desplazamiento de 20px
+    window.scrollBy({
+      top: 100,
+      behavior: 'smooth'
+    });
+
+    // 2. Desconectamos el observer para que SOLO se mueva una vez al inicio
+    observer.disconnect();
+  });
+
+  // Observamos si cambian los hijos o el texto dentro de contenedor
+  if (contenedor) {
+    observer.observe(contenedor, { childList: true, characterData: true, subtree: true });
+  }
+
+
+  // --- Toast helper ---
+  function showToast(msg, type = 'error') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = `toast ${type} show`;
+    setTimeout(() => t.classList.remove('show'), 4000);
+  }
+
+
+  document.addEventListener("DOMContentLoaded", () => {
+    let tiempo;
+
+    // Función que se ejecuta cuando el tiempo se agota
+    function cerrarSesion() {
+        alert("Tu sesión ha expirado por inactividad.");
+        
+        // Seleccionamos el formulario de logout
+        const logoutForm = document.getElementById('logoutform');
+        
+        if (!logoutForm) {
+            console.error("No se encontró el formulario 'logoutform'");
+            return;
+        }
+
+        // Obtenemos el token CSRF desde la etiqueta meta del HTML
+        const metaTag = document.querySelector('meta[name="csrf-token"]');
+        const csrfToken = metaTag ? metaTag.content : '';
+
+        // Ejecutamos el fetch con el token correctamente incluido
+        fetch(logoutForm.action, {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrfToken
+            }
+        })
+        .then(response => {
+            // Redirigimos a la página que indique el servidor (ej. /login)
+            window.location.href = response.url;
+        })
+        .catch(error => {
+            console.error('Error al cerrar sesión:', error);
+        });
+    }
+
+    // Función para reiniciar el conteo de inactividad
+    function resetearTemporizador() {
+        clearTimeout(tiempo);
+        // 900000 milisegundos = 15 minutos
+        tiempo = setTimeout(cerrarSesion, 15000);
+    } 
+
+    // Inicializamos el temporizador al cargar la página
+    resetearTemporizador();
+
+    // Escuchamos eventos de actividad del usuario
+    window.addEventListener('mousemove', resetearTemporizador);
+    window.addEventListener('mousedown', resetearTemporizador);
+    window.addEventListener('touchstart', resetearTemporizador);
+    window.addEventListener('keypress', resetearTemporizador);
+});
+
+  
+  // Iniciar el proceso cuando cargue la página
+  document.addEventListener('DOMContentLoaded', () => {
+
+    {% if modo_stream %}
+
+      console.log("Entramos al modo streaming");
+      iniciarStream();
+
+    {% else %}
+
+      console.log("Entramos al modo base de datos");
+
+      const textoDesdeBD = {{ justificacion_db | tojson }};
+      const justify = document.getElementById('justificationBody');
+
+      // LOGICA QUE DETECTA Y OBTIENE EL TEXTO DESPIES DE "CALIFICACION IA" o "CALIFICACION IA:"
+      // Y EJECUTA LA FUNCION 'aplicarVeredicto' PARA ENTINTAR LA TARJETA 'VEREDICTO'
+      if (!veredictoDetectado && textoDesdeBD.includes("CALIFICACION IA:")) {
+          const despuesDeCalificacion = textoDesdeBD.split("CALIFICACION IA:")[1].trim().toUpperCase();
+
+          if (despuesDeCalificacion.length >= 2) {
+              if (
+                  despuesDeCalificacion.startsWith("SI") ||
+                  despuesDeCalificacion.startsWith("SÍ") ||
+                  despuesDeCalificacion.startsWith("YES")
+              ) {
+                  aplicarVeredicto(true);
+                  veredictoDetectado = true;
+
+              } else if (despuesDeCalificacion.startsWith("NO")) {
+                  aplicarVeredicto(false);
+                  veredictoDetectado = true;
+              }
+          }
+      }
+
+      // LOGICA QUE EXTRAE TEXTO DESPUES DE "Justificación" o "Justificación"
+
+      textoParaUser = textoDesdeBD;
+
+      if (textoDesdeBD.includes("Justificación:")) {
+          textoParaUser = textoDesdeBD.split("Justificación:")[1];
+
+      } else if (textoDesdeBD.includes("Justificacion:")) {
+          textoParaUser = textoDesdeBD.split("Justificacion:")[1];
+      }
+
+      // EJECUTAMOS FUNCION QUE SE DEDICA A RENDERIZAR LA RESPUESTA 
+      justify.innerHTML = renderJustification(textoParaUser);
+
+    {% endif %}
+
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Yorgan · Correo enviado</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0d0f14;
+      --surface: #161a23;
+      --card:    #1c2130;
+      --border:  #2a3045;
+      --accent:  #e8c46a;
+      --accent2: #5e8cf4;
+      --text:    #e8eaf0;
+      --muted:   #7a85a0;
+      --success: #4ade80;
+      --radius:  16px;
+    }
+
+          /* ── Flash alerts ── */
+    .alert {
+    display: flex; align-items: center; gap: 10px;
+    padding: 13px 14px;
+    border-radius: 10px;
+    font-size: 13px; line-height: 1.5;
+    animation: fadeUp 0.4s ease both;
+
+    margin-bottom: 20px;
+    }
+
+    .alert svg{
+    width:20px;
+    height:20px;
+    flex-shrink:0;
+
+    stroke: currentColor;
+    }
+
+    .alert-danger {
+    background: #271414;
+    border: 1px solid var(--danger);
+    color: var(--danger); 
+    }
+
+    .alert-success {
+    background: #11241d;
+    border: 1px solid var(--success);
+    color: var(--success); 
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 20px 80px;
+      overflow-x: hidden;
+      text-align: center;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: -200px; left: 50%;
+      transform: translateX(-50%);
+      width: 900px; height: 650px;
+      background: radial-gradient(ellipse, rgba(94,140,244,0.09) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -200px; left: 50%;
+      transform: translateX(-50%);
+      width: 700px; height: 500px;
+      background: radial-gradient(ellipse, rgba(74,222,128,0.06) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+
+    .wrapper {
+      width: 100%; max-width: 600px;
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column;
+      align-items: center;
+    }
+
+    .brand {
+      margin-bottom: 48px;
+      animation: fadeDown 0.65s ease both;
+    }
+    .brand-logo {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 46px; height: 46px;
+      background: rgba(232,196,106,0.1);
+      border: 1px solid rgba(232,196,106,0.22);
+      border-radius: 14px;
+      margin-bottom: 12px;
+    }
+    .brand-logo svg { width: 22px; height: 22px; stroke: var(--accent); }
+    .brand-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem; font-weight: 700;
+      letter-spacing: -0.02em; color: var(--text);
+    }
+    .brand-name span { color: var(--accent); }
+
+    .illustration {
+      margin-bottom: 44px;
+      animation: floatIn 0.8s cubic-bezier(0.22,1,0.36,1) 0.1s both;
+    }
+    .illustration svg { animation: float 4s ease-in-out infinite; }
+
+    .content { animation: fadeUp 0.7s 0.25s ease both; }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: rgba(74,222,128,0.1);
+      border: 1px solid rgba(74,222,128,0.25);
+      color: var(--success);
+      font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 6px 16px; border-radius: 999px;
+      margin-bottom: 28px; font-weight: 500;
+    }
+    .badge-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.4rem, 6vw, 3.8rem);
+      font-weight: 700; line-height: 1.1;
+      letter-spacing: -0.025em;
+      color: var(--text);
+      margin-bottom: 24px;
+    }
+    h1 em { color: var(--accent); font-style: normal; }
+
+    .lead {
+      font-size: clamp(1.05rem, 2.5vw, 1.2rem);
+      color: #b8bdd0;
+      line-height: 1.75;
+      max-width: 500px;
+      margin: 0 auto 16px;
+    }
+
+    .email-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(94,140,244,0.1);
+      border: 1px solid rgba(94,140,244,0.25);
+      color: var(--accent2);
+      font-size: 1rem; font-weight: 500;
+      padding: 8px 18px; border-radius: 999px;
+      margin: 8px 0 32px;
+      word-break: break-all;
+    }
+    .email-pill svg { width: 15px; height: 15px; stroke: var(--accent2); flex-shrink: 0; }
+
+    .secondary-text {
+      font-size: 1rem;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 460px;
+      margin: 0 auto 52px;
+    }
+    .secondary-text strong { color: var(--text); font-weight: 500; }
+
+    .steps-hint {
+      display: flex; gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 48px;
+      animation: fadeUp 0.7s 0.4s ease both;
+    }
+    .step-chip {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 16px;
+      font-size: 13px; color: var(--muted);
+    }
+    .step-num {
+      width: 20px; height: 20px; border-radius: 6px;
+      background: rgba(94,140,244,0.12);
+      border: 1px solid rgba(94,140,244,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 500; color: var(--accent2);
+      flex-shrink: 0;
+    }
+
+    .divider {
+      width: 60px; height: 1px;
+      background: var(--border);
+      margin: 0 auto 40px;
+      animation: fadeUp 0.7s 0.45s ease both;
+    }
+
+    .btn-back {
+      display: inline-flex; align-items: center; gap: 9px;
+      padding: 14px 32px;
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px; font-weight: 400;
+      text-decoration: none;
+      transition: border-color 0.25s, color 0.25s, background 0.25s;
+      animation: fadeUp 0.7s 0.5s ease both;
+    }
+    .btn-back:hover {
+      border-color: var(--accent2);
+      color: var(--text);
+      background: rgba(94,140,244,0.05);
+    }
+    .btn-back svg { width: 16px; height: 16px; stroke: currentColor; }
+
+    @keyframes fadeDown {
+      from { opacity:0; transform: translateY(-16px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity:0; transform: translateY(18px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+    @keyframes floatIn {
+      from { opacity:0; transform: translateY(24px) scale(0.95); }
+      to   { opacity:1; transform: translateY(0) scale(1); }
+    }
+    @keyframes pulse {
+      0%,100% { opacity:1; } 50% { opacity:0.3; }
+    }
+    @keyframes float {
+      0%,100% { transform: translateY(0); }
+      50%     { transform: translateY(-8px); }
+    }
+
+    @media (max-width: 520px) {
+      .steps-hint { flex-direction: column; align-items: center; }
+      .step-chip  { width: 100%; max-width: 280px; }
+    }
+  </style>
+</head>
+<body>
+
+{# ═══════════════════════════════════════════════════════════
+   BLOQUE DE CONTENIDO DINÁMICO SEGÚN tipo_de_plantilla
+   Valores posibles: "registro_de_usuarios" | "olvide_contraseña" | "reenvio_token"
+   ═══════════════════════════════════════════════════════════ #}
+
+{% if tipo_de_plantilla == "registro_de_usuarios" %}
+
+  {% set badge_texto    = "Cuenta creada exitosamente" %}
+  {% set titulo_l1      = "¡Bienvenido a" %}
+  {% set titulo_l2      = "Yorgan!" %}
+  {% set lead_texto     = "Hemos enviado un correo de verificación a" %}
+  {% set cuerpo_texto   = "Para activar tu cuenta debes confirmar tu dirección de correo. Dentro del mensaje encontrarás un enlace de verificación que estará activo durante <strong>24 horas</strong>. Si no verificas tu cuenta en ese tiempo, tendrás que solicitar un nuevo enlace. Revisa también tu carpeta de <strong>spam o correo no deseado</strong>." %}
+  {% set paso1          = "Abre tu bandeja de entrada" %}
+  {% set paso2          = "Haz clic en \"Verificar cuenta\"" %}
+  {% set paso3          = "¡Listo! Ya puedes iniciar sesión" %}
+
+{% elif tipo_de_plantilla == "olvide_contraseña" %}
+
+  {% set badge_texto    = "Correo enviado exitosamente" %}
+  {% set titulo_l1      = "Revisa tu" %}
+  {% set titulo_l2      = "bandeja de entrada" %}
+  {% set lead_texto     = "Hemos enviado instrucciones para restablecer tu contraseña a" %}
+  {% set cuerpo_texto   = "Si este correo está vinculado a una cuenta de <strong>Yorgan</strong>, encontrarás un enlace para crear una nueva contraseña. El enlace es válido por <strong>24 horas</strong> y solo puede usarse una vez. Si no solicitaste este cambio, puedes ignorar el mensaje con seguridad." %}
+  {% set paso1          = "Abre tu bandeja de entrada" %}
+  {% set paso2          = "Haz clic en el enlace del correo" %}
+  {% set paso3          = "Crea tu nueva contraseña" %}
+
+{% elif tipo_de_plantilla == "reenvio_token" %}
+
+  {% set badge_texto    = "Nuevo enlace generado" %}
+  {% set titulo_l1      = "Enlace reenviado" %}
+  {% set titulo_l2      = "con éxito" %}
+  {% set lead_texto     = "Hemos enviado un nuevo enlace de verificación a" %}
+  {% set cuerpo_texto   = "El enlace anterior ya no es válido; a partir de ahora solo funcionará el que acabas de solicitar. Tienes <strong>24 horas</strong> para usarlo antes de que expire. Si sigues sin recibir el correo, revisa tu carpeta de <strong>spam o correo no deseado</strong> y asegúrate de que la dirección sea correcta." %}
+  {% set paso1          = "Abre tu bandeja de entrada" %}
+  {% set paso2          = "Haz clic en el nuevo enlace" %}
+  {% set paso3          = "Completa la verificación" %}
+
+{% else %}
+
+  {# Fallback genérico por si llega un valor inesperado #}
+  {% set badge_texto    = "Correo enviado" %}
+  {% set titulo_l1      = "Revisa tu" %}
+  {% set titulo_l2      = "correo electrónico" %}
+  {% set lead_texto     = "Hemos enviado un correo a" %}
+  {% set cuerpo_texto   = "Sigue las instrucciones del correo para continuar. Si no lo recibes en unos minutos, revisa tu carpeta de <strong>spam</strong>." %}
+  {% set paso1          = "Abre tu bandeja de entrada" %}
+  {% set paso2          = "Sigue las instrucciones" %}
+  {% set paso3          = "Regresa a Yorgan" %}
+
+{% endif %}
+
+<div class="wrapper">
+
+   <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="alerts">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+              <svg fill="none" viewBox="0 0 24 24" stroke-width="2" >
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+              </svg>
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+
+  <!-- Brand -->
+  <div class="brand">
+
+    <div class="brand-name">Yor<span>gan</span></div>
+  </div>
+
+  <!-- Ilustración (igual en todos los contextos) -->
+  <div class="illustration">
+    <svg width="200" height="160" viewBox="0 0 200 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="20" y="45" width="160" height="100" rx="14" fill="#1c2130" stroke="#2a3045" stroke-width="1.5"/>
+      <path d="M20 59 L100 105 L180 59" stroke="#2a3045" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M20 145 L68 100" stroke="#2a3045" stroke-width="1" stroke-linecap="round"/>
+      <path d="M180 145 L132 100" stroke="#2a3045" stroke-width="1" stroke-linecap="round"/>
+      <circle cx="46" cy="68" r="3" fill="#5e8cf4" opacity="0.5"/>
+      <circle cx="148" cy="38" r="22" fill="#0d0f14"/>
+      <circle cx="148" cy="38" r="21" fill="#1c2130" stroke="rgba(74,222,128,0.35)" stroke-width="1.5"/>
+      <path d="M138 38 L145 45 L159 30" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="30" cy="40" r="3" fill="#5e8cf4" opacity="0.3"/>
+      <circle cx="170" cy="150" r="4" fill="#e8c46a" opacity="0.25"/>
+      <circle cx="15" cy="110" r="2.5" fill="#4ade80" opacity="0.2"/>
+      <circle cx="186" cy="70" r="2" fill="#5e8cf4" opacity="0.2"/>
+    </svg>
+  </div>
+
+  <!-- Contenido principal (texto dinámico) -->
+  <div class="content">
+    <div class="badge">
+      <span class="badge-dot"></span>
+      {{ badge_texto }}
+    </div>
+
+
+    <h1>{{ titulo_l1 }}<br><em>{{ titulo_l2 }}</em></h1>
+
+    <p class="lead">{{ lead_texto }}</p>
+
+    <div class="email-pill">
+      <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/>
+      </svg>
+      {{ correo }}
+    </div>
+
+    <p class="secondary-text">{{ cuerpo_texto | safe }}</p>
+  </div>
+
+  <!-- Pasos (dinámicos) -->
+  <div class="steps-hint">
+    <div class="step-chip">
+      <div class="step-num">1</div>
+      {{ paso1 }}
+    </div>
+    <div class="step-chip">
+      <div class="step-num">2</div>
+      {{ paso2 }}
+    </div>
+    <div class="step-chip">
+      <div class="step-num">3</div>
+      {{ paso3 }}
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Botón de regreso -->
+  <a href="/inicio_sesion" class="btn-back">
+    <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+    </svg>
+    Regresar al inicio de sesión
+  </a>
+
+</div>
+
+</body>
+</html>

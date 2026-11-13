@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yorgan — Nuestra Historia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#0a1830;
+    --bg-deep-2:#0f2247;
+    --bg-deep-3:#122a54;
+    --lime:#b6f500;
+    --lime-soft:#8fd400;
+    --lime-dim:rgba(182,245,0,0.14);
+    --gold:#d4af6a;
+    --text-primary:#f4f7fb;
+    --text-muted:#9fb0c9;
+    --text-faint:#6d7fa0;
+    --border-soft:rgba(255,255,255,0.08);
+    --radius-lg:20px;
+    --radius-md:14px;
+    --glow-opacity:0.06;
+    --glow-scale:0.55;
+    --maxw:1120px;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(4, 11, 47, 0.35) 0%, transparent 45%),
+      radial-gradient(circle at 85% 8%, rgba(30,60,140,0.28) 0%, transparent 40%),
+      linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-deep-2) 55%, var(--bg-deep-3) 100%);
+    color:var(--text-primary);
+    font-family:'DM Sans', sans-serif;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    position:relative;
+  }
+
+  h1,h2,h3{
+    font-family:'Playfair Display', serif;
+    font-weight:600;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+
+  a{color:inherit; text-decoration:none;}
+  ul{margin:0; padding:0; list-style:none;}
+  img,svg{display:block;}
+
+  /* ---------- resplandor verde lima que crece con el scroll ---------- */
+  .lime-glow{
+    position:fixed;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+    background: radial-gradient(
+      circle at 50% 100%,
+      rgba(182,245,0,var(--glow-opacity)) 0%,
+      rgba(182,245,0,calc(var(--glow-opacity) * 0.55)) 28%,
+      transparent 62%
+    );
+    transform: scale(var(--glow-scale));
+    transform-origin: 50% 100%;
+    transition: transform 0.35s ease-out, opacity 0.35s ease-out;
+    will-change: transform;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .lime-glow{ transition:none; }
+    html{ scroll-behavior:auto; }
+  }
+
+  /* ---------- aparición con desplazamiento hacia arriba ---------- */
+  .reveal{
+    opacity:0;
+    transform:translateY(34px);
+    transition:opacity 0.8s cubic-bezier(.16,.84,.36,1), transform 0.8s cubic-bezier(.16,.84,.36,1);
+    transition-delay:var(--reveal-delay, 0s);
+  }
+  .reveal.in-view{
+    opacity:1;
+    transform:translateY(0);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .reveal{
+      opacity:1;
+      transform:none;
+      transition:none;
+    }
+  }
+
+  main, header, footer{ position:relative; z-index:1; }
+
+  /* ---------- navbar ---------- */
+  .navbar{
+    position:sticky;
+    top:0;
+    z-index:50;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:16px clamp(20px,5vw,56px);
+    background:rgba(10,24,48,0.72);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--border-soft);
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-family:'Playfair Display', serif;
+    font-size:1.3rem;
+    font-weight:700;
+  }
+  .brand-mark{
+    width:30px; height:30px;
+    border-radius:8px;
+    background:linear-gradient(135deg, var(--lime) 0%, var(--gold) 130%);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--bg-deep);
+    font-family:'DM Sans', sans-serif;
+    font-weight:700;
+    font-size:0.95rem;
+  }
+  .nav-links{
+    display:flex;
+    align-items:center;
+    gap:34px;
+    font-size:0.94rem;
+    color:var(--text-muted);
+  }
+  .nav-links a{
+    position:relative;
+    padding:4px 0;
+    transition:color 0.2s ease;
+  }
+  .nav-links a:hover, .nav-links a.active{ color:var(--text-primary); }
+  .nav-links a.active::after{
+    content:"";
+    position:absolute;
+    left:0; right:0; bottom:-4px;
+    height:2px;
+    background:var(--lime);
+    border-radius:2px;
+  }
+  .nav-cta{
+    padding:9px 20px;
+    border-radius:999px;
+    background:transparent;
+    border:1px solid var(--border-soft);
+    font-size:0.9rem;
+    color:var(--text-primary);
+    transition:border-color 0.2s ease, background 0.2s ease;
+  }
+  .nav-cta:hover{ border-color:var(--lime); background:var(--lime-dim); }
+
+  .nav-toggle{
+    display:none;
+    flex-direction:column;
+    gap:5px;
+    background:none;
+    border:none;
+    cursor:pointer;
+    padding:6px;
+  }
+  .nav-toggle span{
+    width:22px; height:2px;
+    background:var(--text-primary);
+    border-radius:2px;
+  }
+
+  /* ---------- layout helpers ---------- */
+  .wrap{
+    max-width:var(--maxw);
+    margin:0 auto;
+    padding:0 clamp(20px,5vw,56px);
+  }
+  section{ padding:clamp(56px,8vw,96px) 0; }
+
+  .eyebrow{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-size:0.78rem;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--lime-soft);
+    margin-bottom:18px;
+  }
+  .eyebrow::before{
+    content:"";
+    width:20px; height:1px;
+    background:var(--lime-soft);
+  }
+
+  /* ---------- historia ---------- */
+  .historia h1{
+    font-size:clamp(2.1rem, 4.4vw, 3.4rem);
+    max-width:16ch;
+    margin-bottom:22px;
+  }
+  .historia .lead{
+    max-width:62ch;
+    color:var(--text-muted);
+    font-size:1.05rem;
+  }
+  .historia .lead strong{ color:var(--text-primary); font-weight:600; }
+
+  .stat-grid{
+    margin-top:48px;
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:18px;
+  }
+  .stat-card{
+    background:rgba(255,255,255,0.03);
+    border:1px solid var(--border-soft);
+    border-radius:var(--radius-lg);
+    padding:26px 24px;
+    transition:border-color 0.25s ease, transform 0.25s ease, background 0.25s ease;
+  }
+  .stat-card:hover{
+    border-color:rgba(182,245,0,0.35);
+    background:rgba(182,245,0,0.03);
+    transform:translateY(-3px);
+  }
+  .stat-card .num{
+    font-family:'Playfair Display', serif;
+    font-size:2.3rem;
+    font-weight:700;
+    color:var(--lime);
+    line-height:1;
+  }
+  .stat-card .label{
+    margin-top:10px;
+    font-size:0.92rem;
+    color:var(--text-muted);
+  }
+
+  /* ---------- privacidad ---------- */
+  .privacy{
+    display:grid;
+    grid-template-columns:1.1fr 0.9fr;
+    gap:56px;
+    align-items:center;
+  }
+  .privacy h2{
+    font-size:clamp(1.7rem, 3vw, 2.3rem);
+    margin-bottom:18px;
+    max-width:14ch;
+  }
+  .privacy p{
+    color:var(--text-muted);
+    max-width:46ch;
+  }
+  .key-list{
+    background:rgba(255,255,255,0.03);
+    border:1px solid var(--border-soft);
+    border-radius:var(--radius-lg);
+    padding:8px;
+  }
+  .key-item{
+    display:flex;
+    align-items:flex-start;
+    gap:14px;
+    padding:16px;
+    border-radius:var(--radius-md);
+    transition:background 0.2s ease;
+  }
+  .key-item:not(:last-child){ border-bottom:1px solid var(--border-soft); }
+  .key-item:hover{ background:rgba(182,245,0,0.04); }
+  .key-icon{
+    flex:none;
+    width:34px; height:34px;
+    border-radius:9px;
+    background:var(--lime-dim);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .key-icon svg{ width:16px; height:16px; }
+  .key-item span{ font-size:0.95rem; color:var(--text-primary); padding-top:6px; }
+
+  /* ---------- para quien ---------- */
+  .audience h2{
+    font-size:clamp(1.7rem, 3vw, 2.3rem);
+    margin-bottom:40px;
+  }
+  .audience-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:20px;
+  }
+  .audience-card{
+    background:rgba(255,255,255,0.03);
+    border:1px solid var(--border-soft);
+    border-radius:var(--radius-lg);
+    padding:28px 24px;
+    transition:transform 0.25s ease, border-color 0.25s ease;
+  }
+  .audience-card:hover{
+    transform:translateY(-4px);
+    border-color:rgba(212,175,106,0.4);
+  }
+  .audience-card .tag{
+    display:inline-block;
+    font-size:0.72rem;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--gold);
+    margin-bottom:12px;
+  }
+  .audience-card h3{
+    font-size:1.1rem;
+    font-weight:600;
+    margin-bottom:10px;
+    color:var(--text-primary);
+  }
+  .audience-card p{
+    margin:0;
+    font-size:0.92rem;
+    color:var(--text-muted);
+  }
+
+  /* ---------- cta final ---------- */
+  .final-cta{
+    text-align:center;
+    padding-bottom:clamp(80px,10vw,120px);
+  }
+  .final-cta h2{
+    font-size:clamp(1.8rem, 3.6vw, 2.6rem);
+    margin-bottom:14px;
+  }
+  .final-cta p{
+    color:var(--text-muted);
+    max-width:44ch;
+    margin:0 auto 34px;
+  }
+  .btn-primary{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    padding:16px 34px;
+    border-radius:999px;
+    background:linear-gradient(120deg, var(--lime) 0%, var(--lime-soft) 100%);
+    color:#08150c;
+    font-weight:700;
+    font-size:1rem;
+    box-shadow:0 0 0 1px rgba(182,245,0,0.25), 0 20px 40px -14px rgba(182,245,0,0.45);
+    transition:transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .btn-primary:hover{
+    transform:translateY(-2px);
+    box-shadow:0 0 0 1px rgba(182,245,0,0.4), 0 26px 50px -14px rgba(182,245,0,0.6);
+  }
+  .btn-primary svg{ width:16px; height:16px; }
+
+  footer{
+    border-top:1px solid var(--border-soft);
+    padding:26px clamp(20px,5vw,56px);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-size:0.82rem;
+    color:var(--text-faint);
+  }
+
+  /* ---------- responsive ---------- */
+  @media (max-width:900px){
+    .privacy{ grid-template-columns:1fr; gap:32px; }
+    .audience-grid{ grid-template-columns:1fr 1fr; }
+  }
+
+  @media (max-width:680px){
+    .nav-links{
+      position:fixed;
+      top:64px; left:0; right:0;
+      flex-direction:column;
+      align-items:flex-start;
+      gap:0;
+      background:rgba(19, 42, 9, 0.97);
+      backdrop-filter:blur(16px);
+      border-bottom:1px solid var(--border-soft);
+      max-height:0;
+      overflow:hidden;
+      transition:max-height 0.3s ease;
+    }
+    .nav-links.open{ max-height:320px; }
+    .nav-links a, .nav-links .nav-cta{
+      width:100%;
+      padding:16px clamp(20px,5vw,56px);
+      border-bottom:1px solid var(--border-soft);
+    }
+    .nav-cta{ text-align:center; border-radius:0; }
+    .nav-toggle{ display:flex; }
+
+    .stat-grid{ grid-template-columns:1fr; }
+    .audience-grid{ grid-template-columns:1fr; }
+    section{ padding:44px 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="lime-glow" id="limeGlow"></div>
+
+<header class="navbar">
+  <div class="brand">
+    Yorgan
+  </div>
+  <nav class="nav-links" id="navLinks">
+    <a href="/">Home</a>
+    <a href="/quienes_somos" class="active">Nosotros</a>
+    <a href="/analizador">Analizador</a>
+    <a href="/inicio_sesion" class="nav-cta">Iniciar sesión</a>
+  </nav>
+  <button class="nav-toggle" id="navToggle" aria-label="Abrir menú">
+    <span></span><span></span><span></span>
+  </button>
+</header>
+
+<main>
+
+  <section class="historia">
+    <div class="wrap">
+      <span class="eyebrow reveal" style="--reveal-delay:0s">Nuestra historia</span>
+      <h1 class="reveal" style="--reveal-delay:0.08s">Cero complicaciones, máximo impacto en tu postulación.</h1>
+      <p class="lead reveal" style="--reveal-delay:0.16s">
+        <strong>Yorgan</strong> es una herramienta especializada en el análisis y optimización de CVs
+        mediante inteligencia artificial, creada por el ingeniero de software <strong>Isaac Silva</strong>.
+        Diseñada bajo la filosofía de "cero complicaciones", la plataforma elimina los registros
+        exhaustivos, cobros excesivos y configuraciones tediosas habituales en otros servicios.
+        Nuestro objetivo es brindar a los profesionales la certeza y las métricas que necesitan
+        para aplicar a vacantes con el máximo impacto y el menor esfuerzo.
+      </p>
+
+      <div class="stat-grid">
+        <div class="stat-card reveal" style="--reveal-delay:0.24s">
+          <div class="num">100%</div>
+          <div class="label">Análisis inmediato y sin configuraciones complejas.</div>
+        </div>
+        <div class="stat-card reveal" style="--reveal-delay:0.32s">
+          <div class="num">&lt; 1 min</div>
+          <div class="label">Tiempo promedio para auditar tu CV.</div>
+        </div>
+        <div class="stat-card reveal" style="--reveal-delay:0.4s">
+          <div class="num">IA</div>
+          <div class="label">Algoritmo adaptado a estándares del sector tech/profesional.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="privacy">
+    <div class="wrap privacy">
+      <div class="reveal">
+        <span class="eyebrow">Privacidad y seguridad</span>
+        <h2>Tu información está bajo llave.</h2>
+        <p>
+          Al tratar con información personal y laboral delicada como un CV, protegerla no es
+          opcional: es la base de la confianza que depositas en nosotros.
+        </p>
+      </div>
+      <ul class="key-list reveal" style="--reveal-delay:0.12s">
+        <li class="key-item">
+          <span class="key-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#b6f500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          </span>
+          <span>Tus datos están cifrados y protegidos.</span>
+        </li>
+        <li class="key-item">
+          <span class="key-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#b6f500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"></path><circle cx="10" cy="7" r="4"></circle><line x1="19" y1="8" x2="19" y2="14"></line><line x1="22" y1="11" x2="16" y2="11"></line></svg>
+          </span>
+          <span>No compartimos tu información personal con terceros.</span>
+        </li>
+        <li class="key-item">
+          <span class="key-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#b6f500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+          </span>
+          <span>Tu historia laboral es solo tuya.</span>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="audience">
+    <div class="wrap">
+      <span class="eyebrow reveal">¿Para quién es Yorgan?</span>
+      <h2 class="reveal" style="--reveal-delay:0.08s">Hecho para cada etapa de tu búsqueda.</h2>
+      <div class="audience-grid">
+        <div class="audience-card reveal" style="--reveal-delay:0.16s">
+          <span class="tag">Tech</span>
+          <h3>Desarrolladores &amp; Tech</h3>
+          <p>Optimiza palabras clave técnicas: frameworks, lenguajes, metodologías.</p>
+        </div>
+        <div class="audience-card reveal" style="--reveal-delay:0.24s">
+          <span class="tag">Transición</span>
+          <h3>Profesionales en transición</h3>
+          <p>Ajusta el enfoque de tu experiencia hacia nuevos roles.</p>
+        </div>
+        <div class="audience-card reveal" style="--reveal-delay:0.32s">
+          <span class="tag">Postulación activa</span>
+          <h3>Postulantes activos</h3>
+          <p>Audita tu CV rápidamente para cada vacante a la que apliques.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="final-cta">
+    <div class="wrap">
+      <h2 class="reveal">¿Listo para potenciar tu postulación?</h2>
+      <p class="reveal" style="--reveal-delay:0.08s">Analiza tu CV en segundos y aumenta tus probabilidades de éxito.</p>
+      <a href="/analizador" class="btn-primary reveal" style="--reveal-delay:0.16s">
+        Evaluar mi CV ahora
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      </a>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <span>© 2026 Yorgan. Creado por Isaac Silva.</span>
+  <span>Hecho con cero complicaciones.</span>
+</footer>
+
+<script>
+  (function(){
+    var toggle = document.getElementById('navToggle');
+    var links = document.getElementById('navLinks');
+    toggle.addEventListener('click', function(){
+      links.classList.toggle('open');
+    });
+    links.querySelectorAll('a').forEach(function(a){
+      a.addEventListener('click', function(){ links.classList.remove('open'); });
+    });
+
+    var glow = document.getElementById('limeGlow');
+    var ticking = false;
+
+    function updateGlow(){
+      var scrollTop = window.scrollY || document.documentElement.scrollTop;
+      var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      var progress = docHeight > 0 ? Math.min(Math.max(scrollTop / docHeight, 0), 1) : 0;
+
+      var opacity = 0.06 + progress * 0.34;   // 0.06 -> 0.40
+      var scale = 0.55 + progress * 1.35;     // 0.55 -> 1.9
+
+      glow.style.setProperty('--glow-opacity', opacity.toFixed(3));
+      glow.style.setProperty('--glow-scale', scale.toFixed(3));
+      ticking = false;
+    }
+
+    window.addEventListener('scroll', function(){
+      if(!ticking){
+        requestAnimationFrame(updateGlow);
+        ticking = true;
+      }
+    }, { passive:true });
+
+    updateGlow();
+
+    // ---------- aparición con desplazamiento hacia arriba ----------
+    var revealEls = document.querySelectorAll('.reveal');
+    var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersReduced || !('IntersectionObserver' in window)) {
+      revealEls.forEach(function(el){ el.classList.add('in-view'); });
+    } else {
+      var observer = new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          if (entry.isIntersecting){
+            entry.target.classList.add('in-view');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+      revealEls.forEach(function(el){ observer.observe(el); });
+    }
+  })();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Yorgan · Error</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0d0f14;
+      --surface: #161a23;
+      --card:    #1c2130;
+      --border:  #2a3045;
+      --accent:  #e8c46a;
+      --accent2: #5e8cf4;
+      --text:    #e8eaf0;
+      --muted:   #7a85a0;
+      --danger:  #f87171;
+      --danger2: #ef4444;
+      --danger-bg: rgba(248,113,113,0.06);
+      --danger-border: rgba(248,113,113,0.22);
+      --radius:  16px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 20px 80px;
+      overflow-x: hidden;
+    }
+
+    /* Top glow — blue, same as rest of app */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -200px; left: 50%;
+      transform: translateX(-50%);
+      width: 800px; height: 500px;
+      background: radial-gradient(ellipse, rgba(94,140,244,0.08) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+    /* Bottom glow — red, error atmosphere */
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -180px; left: 50%;
+      transform: translateX(-50%);
+      width: 700px; height: 500px;
+      background: radial-gradient(ellipse, rgba(239,68,68,0.1) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+
+    .wrapper {
+      width: 100%; max-width: 680px;
+      position: relative; z-index: 1;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      margin-bottom: 44px;
+      animation: fadeDown 0.7s ease both;
+    }
+    .brand-logo {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 46px; height: 46px;
+      background: rgba(232,196,106,0.1);
+      border: 1px solid rgba(232,196,106,0.22);
+      border-radius: 14px;
+      margin-bottom: 14px;
+    }
+    .brand-logo svg { width: 22px; height: 22px; stroke: var(--accent); }
+    .brand-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem; font-weight: 700;
+      letter-spacing: -0.02em; color: var(--text);
+    }
+    .brand-name span { color: var(--accent); }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: rgba(248,113,113,0.1);
+      border: 1px solid rgba(248,113,113,0.28);
+      color: var(--danger);
+      font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 5px 14px; border-radius: 999px;
+      margin: 16px 0 18px;
+      font-weight: 500;
+    }
+    .badge-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--danger);
+      animation: pulse 2s infinite;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 700; line-height: 1.15;
+      letter-spacing: -0.02em; color: var(--text);
+    }
+    h1 em { color: var(--danger); font-style: normal; }
+
+    .subtitle {
+      margin-top: 12px;
+      font-size: 14px; color: var(--muted);
+      max-width: 400px; margin-inline: auto;
+      line-height: 1.65;
+    }
+
+    /* ── Error illustration card ── */
+    .error-card {
+      background: var(--card);
+      border: 1px solid var(--danger-border);
+      border-radius: var(--radius);
+      padding: 36px;
+      margin-bottom: 20px;
+      position: relative; overflow: hidden;
+      animation: fadeUp 0.6s 0.15s ease both;
+    }
+    /* Subtle red tint on the card top */
+    .error-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--danger2), rgba(248,113,113,0.3), transparent);
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+
+    .error-icon-wrap {
+      display: flex; align-items: center; gap: 18px;
+      margin-bottom: 24px;
+    }
+    .error-icon {
+      width: 56px; height: 56px; flex-shrink: 0;
+      border-radius: 16px;
+      background: rgba(248,113,113,0.1);
+      border: 1px solid rgba(248,113,113,0.25);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .error-icon svg { width: 26px; height: 26px; stroke: var(--danger); }
+    .error-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.35rem; font-weight: 700;
+      color: var(--text); line-height: 1.2;
+    }
+    .error-code {
+      font-size: 11px; color: var(--danger);
+      letter-spacing: 0.1em; text-transform: uppercase;
+      margin-top: 4px; font-weight: 500;
+    }
+
+    .error-body {
+      font-size: 14.5px; color: #b8bdd0;
+      line-height: 1.8;
+    }
+    .error-body p { margin-bottom: 12px; }
+    .error-body p:last-child { margin-bottom: 0; }
+    .error-body strong { color: var(--text); font-weight: 500; }
+
+    /* Info chips inside error body */
+    .info-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(94,140,244,0.1);
+      border: 1px solid rgba(94,140,244,0.22);
+      color: var(--accent2);
+      font-size: 12px; font-weight: 500;
+      padding: 3px 10px; border-radius: 999px;
+      vertical-align: middle; margin: 0 2px;
+    }
+    .info-chip svg { width: 11px; height: 11px; stroke: currentColor; }
+
+    /* ── Debug detail (optional, for unknown errors) ── */
+    .debug-block {
+      margin-top: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+    .debug-label {
+      font-size: 11px; color: var(--muted);
+      letter-spacing: 0.1em; text-transform: uppercase;
+      margin-bottom: 8px; font-weight: 500;
+    }
+    .debug-text {
+      font-size: 12px; color: var(--muted);
+      font-family: 'Courier New', monospace;
+      word-break: break-all; line-height: 1.6;
+    }
+
+    /* ── Action buttons ── */
+    .actions {
+      display: flex; flex-direction: column; gap: 12px;
+      animation: fadeUp 0.6s 0.3s ease both;
+    }
+
+    .btn-primary {
+      display: flex; align-items: center; justify-content: center; gap: 9px;
+      width: 100%; padding: 14px;
+      background: var(--danger2);
+      color: white;
+      border: none; border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px; font-weight: 500;
+      text-decoration: none; cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+    .btn-primary:hover {
+      background: #dc2626;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(239,68,68,0.25);
+    }
+    .btn-primary svg { width: 16px; height: 16px; stroke: currentColor; }
+
+    .btn-secondary {
+      display: flex; align-items: center; justify-content: center; gap: 9px;
+      width: 100%; padding: 13px;
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px; font-weight: 400;
+      text-decoration: none; cursor: pointer;
+      transition: border-color 0.25s, color 0.25s, background 0.25s;
+    }
+    .btn-secondary:hover {
+      border-color: var(--accent2);
+      color: var(--text);
+      background: rgba(94,140,244,0.05);
+    }
+    .btn-secondary svg { width: 16px; height: 16px; stroke: currentColor; }
+
+    /* Animations */
+    @keyframes fadeDown {
+      from { opacity:0; transform: translateY(-18px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity:0; transform: translateY(18px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0%,100% { opacity:1; } 50% { opacity:0.35; }
+    }
+
+    @media (max-width: 520px) {
+      .error-card { padding: 24px 20px; }
+      .error-icon-wrap { flex-direction: column; align-items: flex-start; gap: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="wrapper">
+
+  <!-- Brand header -->
+  <header>
+
+    <div class="brand-name">Yor<span>gan</span></div>
+
+    <div class="badge">
+      <span class="badge-dot"></span>
+      Ocurrió un problema
+    </div>
+
+    <!-- <h1>Algo salió <em>mal</em></h1> -->
+  </header>
+
+
+  {# ════════════════════════════════
+     CASO 1 — TOKEN EXPIRADO POR RECUPERACION CONTRASEÑA
+     ════════════════════════════════ #}
+  {% if error == "SignatureExpired" and tipo_error == "nueva_contra" %}
+
+  <div class="error-card">
+    <div class="error-icon-wrap">
+      <div class="error-icon">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="error-title">¡El enlace ha caducado!</div>
+        <div class="error-code">SignatureExpired · Token inválido</div>
+      </div>
+    </div>
+    <div class="error-body">
+      <p>
+        El enlace que intentaste usar <strong>ya no es válido</strong> porque su tiempo de vida ha expirado.
+        Por seguridad, cada enlace de verificación o restablecimiento tiene una vigencia limitada de
+        <span class="info-chip">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          10 minutos
+        </span>
+        a partir del momento en que fue generado.
+      </p>
+      <p>
+        Esto puede ocurrir si: el enlace fue enviado hace más de un día, ya lo usaste anteriormente
+        y los tokens de un solo uso se invalidan automáticamente, o si hubo algún retraso en la entrega del correo electrónico.
+      </p>
+    </div>
+  </div>
+
+  <div class="actions">
+    <a href="/recuperacion_contraseña" class="btn-primary">
+      <svg fill="none" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
+      </svg>
+      Solicitar un nuevo enlace
+    </a>
+    <a href="/inicio_sesion" class="btn-secondary">
+      <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+      </svg>
+      Regresar al inicio de sesión
+    </a>
+  </div>
+
+
+
+  {# ════════════════════════════════
+     CASO 1.5 — TOKEN EXPIRADO EN REENVIAR
+     ════════════════════════════════ #}
+  {% elif error == "SignatureExpired" and tipo_error == "reenviar" %}
+
+  <div class="error-card">
+    <div class="error-icon-wrap">
+      <div class="error-icon">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="error-title">¡El enlace ha caducado!</div>
+        <div class="error-code">SignatureExpired · Token inválido</div>
+      </div>
+    </div>
+    <div class="error-body">
+      <p>
+        El enlace que intentaste usar <strong>ya no es válido</strong> porque su tiempo de vida ha expirado.
+        Por seguridad, cada enlace de verificación o restablecimiento tiene una vigencia limitada de
+        <span class="info-chip">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          10 minutos
+        </span>
+        a partir del momento en que fue generado.
+      </p>
+      <p>
+        Esto puede ocurrir si: el enlace fue enviado hace más de un día, ya lo usaste anteriormente
+        y los tokens de un solo uso se invalidan automáticamente, o si hubo algún retraso en la entrega del correo electrónico.
+      </p>
+    </div>
+  </div>
+
+  <div class="actions">
+    <a href="/reenviar" class="btn-primary">
+      <svg fill="none" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
+      </svg>
+      Solicitar un nuevo enlace
+    </a>
+    <a href="/inicio_sesion" class="btn-secondary">
+      <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+      </svg>
+      Regresar al inicio de sesión
+    </a>
+  </div>
+
+
+
+  {# ════════════════════════════════
+     CASO 2 — TOKEN MAL FORMADO (sin punto)
+     ════════════════════════════════ #}
+  {% elif "No b'.' found in value" in error | string %}
+
+  <div class="error-card">
+    <div class="error-icon-wrap">
+      <div class="error-icon">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"/>
+        </svg>
+      </div>
+      <div>
+        <div class="error-title">Enlace con formato incorrecto</div>
+        <div class="error-code">MalformedToken · Estructura inválida</div>
+      </div>
+    </div>
+    <div class="error-body">
+      <p>
+        El enlace que usaste <strong>no tiene la estructura correcta</strong> que Yorgan espera.
+      </p>
+      <p>
+        Te recomendamos <strong>abrir el correo original</strong> y hacer clic directamente
+        en el botón o enlace, sin copiarlo manualmente. Si el problema persiste, solicita un nuevo enlace.
+      </p>
+    </div>
+  </div>
+
+  <div class="actions">
+    <a href="/reenviar" class="btn-primary">
+      <svg fill="none" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
+      </svg>
+      Solicitar un nuevo enlace para registrar cuenta
+    </a>
+    <a href="/recuperacion_contraseña" class="btn-secondary">
+      <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+      </svg>
+      Solicitar un nuevo enlace para cambiar contraseña
+    </a>
+  </div>
+
+
+  {# ════════════════════════════════
+     CASO 3 — FIRMA NO COINCIDE
+     ════════════════════════════════ #}
+  {% elif "does not match" in error | string and "Signature" in error | string %}
+
+  <div class="error-card">
+    <div class="error-icon-wrap">
+      <div class="error-icon">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+        </svg>
+      </div>
+      <div>
+        <div class="error-title">El token no coincide</div>
+        <div class="error-code">SignatureMismatch · Verificación fallida</div>
+      </div>
+    </div>
+    <div class="error-body">
+      <p>
+        La firma digital del enlace que usaste <strong>no coincide</strong> con la que generó el sistema.
+       </p>
+      <p>
+        Si crees que esto es un error, <strong>solicita un nuevo enlace</strong> desde cero.
+      </p>
+    </div>
+  </div>
+
+  <div class="actions">
+    <a href="/reenviar" class="btn-primary">
+      <svg fill="none" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
+      </svg>
+      Solicitar un nuevo enlace para registro de cuenta
+    </a>
+    <a href="/recuperacion_contraseña" class="btn-secondary">
+      <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+      </svg>
+      Solicitar un nuevo enlace para cambiar contraseña
+    </a>
+  </div>
+
+  {# ════════════════════════════════
+     CASO 4 — MÉTODO NO PERMITIDO
+     ════════════════════════════════ #}
+
+  {% elif error == "metodo_no_aceptado" %}
+
+  <div class="error-card">
+    <div class="error-icon-wrap">
+      <div class="error-icon">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M12 9v3.75m0 3h.008M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="error-title">Método no permitido</div>
+        <div class="error-code">Error 405 · Method Not Allowed</div>
+      </div>
+    </div>
+
+    <div class="error-body">
+      <p>
+        La solicitud que intentas realizar utiliza un método HTTP
+        <strong>no permitido para este recurso.</strong>
+        Verifica la dirección o regresa al inicio para continuar navegando.
+      </p>
+    </div>
+  </div>
+
+  
+  <div class="actions">
+    <a href="/inicio_sesion" class="btn-primary">
+      <svg fill="none" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
+      </svg>
+      Iniciar sesion
+    </a>
+    <a href="/" class="btn-secondary">
+      <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+      </svg>
+      Regresar a pagina principal
+    </a>
+  </div>
+  {# ════════════════════════════════
+     CASO 5 — ERROR DESCONOCIDO
+     ════════════════════════════════ #}
+
+  {% elif error == "recurso_no_encotrado" %}
+
+  <div class="error-card">
+    <div class="error-icon-wrap">
+      <div class="error-icon">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="error-title">Recurso no encontrado!</div>
+        <div class="error-code">Page Not Found · Pagina no encontrada</div>
+      </div>
+    </div>
+    <div class="error-body">
+      <p>
+        La pagina a la que intentas ingresar <strong>no existe,</strong> 
+        Te recomendamos regresar al inicio o utilizar el menú de navegación para encontrar lo que necesitas.
+
+      </p>
+    </div>
+  </div>
+
+  <div class="actions">
+    <a href="/registro" class="btn-primary">
+      <svg fill="none" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
+      </svg>
+      Ir a crear cuenta
+    </a>
+    <a href="/" class="btn-secondary">
+      <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+      </svg>
+      Regresar a la pagina principal
+    </a>
+  </div>
+
+
+
+  {# ════════════════════════════════
+     CASO 5 — ERROR DESCONOCIDO
+     ════════════════════════════════ #}
+  {% else %}
+
+  <div class="error-card">
+    <div class="error-icon-wrap">
+      <div class="error-icon">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="error-title">Error desconocido</div>
+        <div class="error-code">UnhandledException · Contacta soporte</div>
+      </div>
+    </div>
+    <div class="error-body">
+      <p>
+        Ocurrió un problema <strong>inesperado</strong> que el sistema no pudo identificar automáticamente.
+      </p>
+      <p>
+        Si el problema continúa, por favor <strong>contacta a soporte</strong> y comparte el detalle
+        técnico que aparece abajo para que podamos identificarlo y resolverlo a la brevedad.
+        Tu cuenta y tus datos están seguros.
+      </p>
+    </div>
+
+    {% if error %}
+    <div class="debug-block">
+      <div class="debug-label">Detalle técnico</div>
+      <div class="debug-text">{{ error }}</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="actions">
+    <a href="/reenviar" class="btn-primary">
+      <svg fill="none" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/>
+      </svg>
+      Solicitar un nuevo enlace para registro de cuenta
+    </a>
+    <a href="/recuperacion_contraseña" class="btn-secondary">
+      <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
+      </svg>
+      Solicitar un nuevo enlace para cambiar contraseña
+    </a>
+  </div>
+
+  {% endif %}
+
+</div><!-- /wrapper -->
+
+</body>
+</html>
