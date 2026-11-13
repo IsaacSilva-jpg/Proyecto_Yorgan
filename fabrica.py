@@ -39,49 +39,56 @@ def crear_app():
     app.wsgi_app = ProxyFix(app.wsgi_app,x_proto=1)
 
 
+    # VARIABLES DE ENTORNO REQUERIDAS
+
+    variables_requeridas = [
+        "DB_USER",
+        "DB_HOST",
+        "DB_NAME",
+        "SQLPASS",
+        "DB_PORT",
+        "FLASK_LOGIN_KEY",
+        "FLASK_MAIL",
+        "MAIL_DEFAULT_SENDER",
+        "CLIENT_ID",
+        "CLIENT_SECRET",
+        "KEY_SERIALI",
+        "GEMINI_API_KEY"
+    ]
+
+    # Identificamos las variables que no tienen valor
+    variables_faltantes = [
+        nombre
+        for nombre in variables_requeridas
+        if not (os.getenv(nombre) or "").strip()
+    ]
+
+    # Detenemos la aplicación si falta alguna
+    if variables_faltantes:
+        raise RuntimeError(
+            f"Faltan variables de entorno: {', '.join(variables_faltantes)}"
+        )
 
     # CARGANDO VARIABLES DE ENTORNO
-
-    db_user= os.getenv("DB_USER")
-    db_host= os.getenv("DB_HOST")
-    db_name= os.getenv("DB_NAME")
-    db_pass= os.getenv("SQLPASS")
+    db_user = os.getenv("DB_USER")
+    db_host = os.getenv("DB_HOST")
+    db_name = os.getenv("DB_NAME")
+    db_pass = os.getenv("SQLPASS")
 
     db_port = int(os.getenv("DB_PORT"))
-    db_ca = os.getenv("DB_CA")
 
 
+    db_ca = "/etc/secrets/ca.pem"
 
-    flask_login_pass= os.getenv("FLASK_LOGIN_KEY")
-    flask_mail_pass= os.getenv("FLASK_MAIL")
+    if not os.path.isfile(db_ca):
+        raise FileNotFoundError("No se encontró el certificado CA de Aiven")
+    
+    flask_login_pass = os.getenv("FLASK_LOGIN_KEY")
+    flask_mail_pass = os.getenv("FLASK_MAIL")
 
     mail_sender = os.getenv("MAIL_DEFAULT_SENDER")
 
-    variables_criticas= [
-        db_user, 
-        db_host, 
-        db_name, 
-        db_pass, 
-        flask_login_pass,
-        flask_mail_pass,
-        os.getenv("CLIENT_ID"),
-        os.getenv("CLIENT_SECRET"),
-        os.getenv("KEY_SERIALI"),
-        os.getenv("GEMINI_API_KEY"),
-        mail_sender,
-        db_port,
-        db_ca
-    ]
-
-    if not all(variables_criticas):
-        raise KeyError("Error critico: faltan variables escenciales en .env")
-
-    # ASIGNAMOS CONTRASEÑA
-    #_______________
-    # SQL_pass = db_pass
-    # SQL_contra_escapada = quote_plus(SQL_pass)
-    #_______________
-
+    
     # CONFIGURACION DE LA BASE DE DATOS
 
     app.config["SQLALCHEMY_DATABASE_URI"] = URL.create(
