@@ -53,7 +53,7 @@ def crear_app():
         "CLIENT_ID",
         "CLIENT_SECRET",
         "KEY_SERIALI",
-        "GEMINI_API_KEY"
+        "GEMINI_API_KEY",
         "REDIS_URL"
     ]
 
