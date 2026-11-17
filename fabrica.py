@@ -54,6 +54,7 @@ def crear_app():
         "CLIENT_SECRET",
         "KEY_SERIALI",
         "GEMINI_API_KEY"
+        "REDIS_URL"
     ]
 
     # Identificamos las variables que no tienen valor

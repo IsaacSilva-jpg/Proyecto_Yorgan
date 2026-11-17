@@ -425,7 +425,11 @@ def authorize():
 
 # ENDPOINT PRINCIPAL (ANALIZADOR DE CV)
 @auth_bp.route("/analizador", methods = ["GET", "POST"])
-@limitador.limit(limit_value="3 per hour", error_message="Has excedido el limite de 3 analisis", methods =["POST"])
+@limitador.limit(
+    limit_value="3 per hour", 
+    error_message="Has excedido el limite de 3 analisis",
+    key_func=lambda: str(current_user.get_id()),
+    methods =["POST"])
 @login_required
 def recibir_archivo():
 

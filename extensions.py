@@ -39,7 +39,10 @@ migrate = Migrate()
 limitador = Limiter(
     key_func=get_remote_address,
     default_limits=["200 per day"],
-    storage_uri="memory://"
+    storage_uri= os.getenv(
+        "REDIS_URL",
+        "memory://"
+    )
 )
 
 # OBJETO VACIO PARA ENVIAR CORREOS
